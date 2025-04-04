@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Language Learning App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" media="screen" href="{% static 'styles/main.css' %}">
+    
+</head>
+<body>
+
+    <header>
+        <h1>Language Learning App</h1>
+    
+    {% include 'navbar.html' %}
+
+
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    </header>
+
+    {% block content %}
+
+    {% endblock %}
+    <footer>
+        <hr>
+        <p>&copy; 2025 Language Learning App</p>
+    </footer>
+
+</html>
