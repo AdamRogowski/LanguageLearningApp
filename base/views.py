@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
-from .models import Room, Topic, Message
+from .models import Room, Topic, Message, Lesson, Word, UserLesson, UserWord
 from .forms import RoomForm
 
 """
@@ -82,11 +82,18 @@ def home(request):
         | Q(body__icontains=q)
     ).order_by("-created")
 
+    user = request.user
+    if user.is_authenticated:
+        user = User.objects.get(id=request.user.id)
+    else:
+        user = None
+
     context = {
         "rooms": rooms,
         "topics": topics,
         "room_count": room_count,
         "comments": comments,
+        "user": user,
     }
     return render(request, "base/home.html", context)
 
@@ -185,3 +192,72 @@ def deleteComment(request, pk):
 
     context = {"obj": comment}
     return render(request, "base/delete.html", context)
+
+
+# Language learning app views.py
+
+
+@login_required(login_url="login")
+def myLessons(request, pk):
+    user = User.objects.get(id=pk)
+    rooms = user.room_set.all()
+    comments = user.message_set.all()
+    topics = Topic.objects.all()
+
+    if request.user.id != user.id and request.user.is_superuser == False:
+        return HttpResponse("You are not allowed here!")
+
+    context = {
+        "user": user,
+        "rooms": rooms,
+        "comments": comments,
+        "topics": topics,
+    }
+    return render(request, "base/my_lessons.html", context)
+
+
+def lessonsRepository(request):
+
+    # This view will display the lessons repository
+    public_lessons = Lesson.objects.all().filter(is_public=True).order_by("-id")
+    words = Word.objects.all()
+
+    context = {
+        "public_lessons": public_lessons,
+    }
+    return render(request, "base/lessons_repository.html", context)
+
+
+def lessonDetails(request, pk):
+
+    # This view will display the lesson overview
+    lesson = Lesson.objects.get(id=pk)
+    if not lesson:
+        return HttpResponse("Lesson not found")
+    if not lesson.is_public:
+        return HttpResponse("This lesson is not public")
+    words = lesson.words.all()
+
+    context = {
+        "lesson": lesson,
+        "words": words,
+    }
+    return render(request, "base/lesson_details.html", context)
+
+
+def wordDetails(request, pk, prompt):
+
+    # This view will display the word details
+    lesson = Lesson.objects.get(id=pk)
+    if not lesson.is_public:
+        return HttpResponse("This lesson is not public")
+    words = lesson.words.all()
+    word = Word.objects.get(prompt=prompt, lesson=lesson)
+    if not word:
+        return HttpResponse("Word not found")
+
+    context = {
+        "lesson": lesson,
+        "word": word,
+    }
+    return render(request, "base/word_details.html", context)

@@ -13,4 +13,12 @@ urlpatterns = [
     path("update-room/<str:pk>/", views.updateRoom, name="update-room"),
     path("delete-room/<str:pk>/", views.deleteRoom, name="delete-room"),
     path("delete-comment/<str:pk>/", views.deleteComment, name="delete-comment"),
+    path("my-lessons/<str:pk>/", views.myLessons, name="my-lessons"),
+    path("lessons-repository/", views.lessonsRepository, name="lessons-repository"),
+    path("lessons-repository/<str:pk>/", views.lessonDetails, name="lesson-details"),
+    path(
+        "lessons-repository/<str:pk>/<str:prompt>/",
+        views.wordDetails,
+        name="word-details",
+    ),
 ]

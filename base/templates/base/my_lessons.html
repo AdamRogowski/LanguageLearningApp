@@ -1,0 +1,26 @@
+{% extends "main.html" %}
+
+{% block content %}
+
+<h1>{{user.username}}'s lessons</h1>
+
+<style>
+    .my-lessons-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+    </style>    
+
+<div class="my-lessons-container">
+    <div>
+        {% include 'base/topics_component.html' %}
+    </div>
+
+    <div>
+        {% include 'base/feed_component.html' %}
+    </div>
+
+</div>
+
+
+{% endblock content %}

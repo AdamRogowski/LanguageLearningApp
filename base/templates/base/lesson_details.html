@@ -1,0 +1,21 @@
+{% extends "main.html" %}
+
+{% block content %}
+
+<a href="{% url 'lesson-details' lesson.id %}">{{ lesson.title }}</a>
+<h5>{{ lesson.description }}</h5>
+
+
+ 
+
+<div class="lesson-container">
+
+    {% for word in words %}
+        <div>
+            <a href="{% url 'word-details' lesson.id word.prompt %}">{{ word.prompt }} -> {{ word.translation }}</a>
+        </div>    
+    {% endfor %}
+
+</div>  
+
+{% endblock content %}
