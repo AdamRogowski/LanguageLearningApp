@@ -2,18 +2,14 @@
 
 {% block content %}
 
-<h1><a href="{% url 'my-lessons' my_lesson.user.id %}">{{my_lesson.user.username}}'s lessons</a></h1>
+<h1><a href="{% url 'my-lessons' my_word.user_lesson.user.id %}">{{my_word.user_lesson.user.username}}'s lessons</a></h1>
 
-<h2><a href="{% url 'my-lesson-details' my_lesson.id %}">{{ my_lesson.lesson.title }}</a></h2>
-{% if my_lesson.lesson.is_public%}
-    <h5>  Public lesson  </h5>
-{% else %}
-    <h5>  Private lesson  </h5>
-{% endif %}
+<h2><a href="{% url 'my-lesson-details' my_word.user_lesson.id %}">{{ my_word.user_lesson.lesson.title }}</a></h2>
+{{ my_lesson.lesson.access_type.name}}
 
-<h5>Lesson description: {{ my_lesson.lesson.description }}</h5>
+<h5>Lesson description: {{ my_word.user_lesson.lesson.description }}</h5>
 
-<h5>Target progress: {{ my_lesson.target_progress }}</h5>
+<h5>Target progress: {{ my_word.user_lesson.target_progress }}</h5>
 
 
  

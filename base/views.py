@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
-from .models import Room, Topic, Message, Lesson, Word, UserLesson, UserWord
+from .models import Room, Topic, Message, Lesson, Word, UserLesson, UserWord, AccessType
 from .forms import RoomForm
 
 """
@@ -205,8 +205,8 @@ def myLessons(request, pk):
         return HttpResponse("You are not allowed here!")
 
     user_lessons = UserLesson.objects.filter(user=user).order_by("-id")
-    if not user_lessons:
-        return HttpResponse("You do not have any lessons yet.")
+    # if not user_lessons:
+    #    return HttpResponse("You do not have any lessons yet.")
     # else:
     #    return HttpResponse(
     #        f"There ae {user_lessons.count()} lessons for you. {user_lessons[0].lesson.title} is the first one."
@@ -230,9 +230,9 @@ def deleteMyLesson(request, my_lesson_id):
 
     if request.method == "POST":
         # Delete all UserWord instances related to this UserLesson
-        UserWord.objects.filter(
-            user=myLesson.user, word__lesson=myLesson.lesson
-        ).delete()
+        # UserWord.objects.filter(
+        #    user=myLesson.user, word__lesson=myLesson.lesson
+        # ).delete()
         # Then delete the UserLesson instance
         myLesson.delete()
         messages.success(request, "Your lesson was deleted successfully.")
@@ -240,9 +240,6 @@ def deleteMyLesson(request, my_lesson_id):
 
     context = {
         "my_lesson": myLesson,
-        "my_words": UserWord.objects.filter(
-            user=myLesson.user, word__lesson=myLesson.lesson
-        ).order_by("-id"),
     }
     return render(request, "base/delete_my_lesson.html", context)
 
@@ -257,9 +254,9 @@ def myLessonDetails(request, my_lesson_id):
     if request.user.id != myLesson.user.id and request.user.is_superuser == False:
         return HttpResponse("You are not allowed here!")
 
-    myWords = UserWord.objects.filter(
-        user=myLesson.user, word__lesson=myLesson.lesson
-    ).order_by("-id")
+    myWords = UserWord.objects.filter(user_lesson=myLesson).order_by("-id")
+    if not myWords:
+        return HttpResponse("You do not have any words in this lesson.")
 
     context = {
         "my_lesson": myLesson,
@@ -275,15 +272,13 @@ def myWordDetails(request, my_word_id):
     if not myWord:
         return HttpResponse("You do not have this word in your lesson.")
 
-    if request.user.id != myWord.user.id and request.user.is_superuser == False:
+    if (
+        request.user.id != myWord.user_lesson.user.id
+        and request.user.is_superuser == False
+    ):
         return HttpResponse("You are not allowed here!")
 
-    myLesson = UserLesson.objects.filter(
-        user=myWord.user, lesson=myWord.word.lesson
-    ).first()
-
     context = {
-        "my_lesson": myLesson,
         "my_word": myWord,
     }
     return render(request, "base/my_word_details.html", context)
@@ -292,7 +287,9 @@ def myWordDetails(request, my_word_id):
 def lessonsRepository(request):
 
     # This view will display the lessons repository
-    public_lessons = Lesson.objects.all().filter(is_public=True).order_by("-id")
+    public_lessons = Lesson.objects.filter(
+        access_type__name__in=["readonly", "write"]
+    ).order_by("-id")
 
     context = {
         "public_lessons": public_lessons,
@@ -306,7 +303,7 @@ def lessonDetails(request, lesson_id):
     lesson = Lesson.objects.get(id=lesson_id)
     if not lesson:
         return HttpResponse("Lesson not found")
-    if not lesson.is_public:
+    if lesson.access_type.name == "private":
         return HttpResponse("This lesson is not public")
     words = lesson.words.all()
 
@@ -321,9 +318,8 @@ def wordDetails(request, lesson_id, prompt):
 
     # This view will display the word details
     lesson = Lesson.objects.get(id=lesson_id)
-    if not lesson.is_public:
+    if lesson.access_type.name == "private":
         return HttpResponse("This lesson is not public")
-    words = lesson.words.all()
     word = Word.objects.get(prompt=prompt, lesson=lesson)
     if not word:
         return HttpResponse("Word not found")
@@ -344,11 +340,18 @@ def importLesson(request, lesson_id):
         if UserLesson.objects.filter(user=user, lesson=lesson).exists():
             return HttpResponse("You have already imported this lesson.")
 
-        UserLesson.objects.create(user=user, lesson=lesson, target_progress=0)
+        if lesson.access_type.name == "private":
+            return HttpResponse("This lesson is private and cannot be imported.")
+
+        newLesson = UserLesson.objects.create(
+            user=user, lesson=lesson, target_progress=0
+        )
 
         words = Word.objects.filter(lesson=lesson)
         for word in words:
-            UserWord.objects.create(user=user, word=word, current_progress=0, notes="")
+            UserWord.objects.create(
+                user_lesson=newLesson, word=word, current_progress=0, notes=""
+            )
 
         return redirect("my-lessons", pk=user.id)
     except Exception as e:

@@ -44,6 +44,24 @@ class Message(models.Model):
 # Language learning app models
 
 
+class AccessType(models.Model):
+    """
+    Controls access and editing rights for a lesson.
+    Examples: Private, Read-only (Public but uneditable), Write (Public and editable).
+    """
+
+    ACCESS_CHOICES = [
+        ("private", "Private"),
+        ("readonly", "Read-Only"),
+        ("write", "Writable"),
+    ]
+
+    name = models.CharField(max_length=20, choices=ACCESS_CHOICES, unique=True)
+
+    def __str__(self):
+        return self.get_name_display()
+
+
 class Language(models.Model):
     name = models.CharField(max_length=50, unique=True)
 
@@ -52,18 +70,31 @@ class Language(models.Model):
 
 
 class Lesson(models.Model):
+    """
+    Represents a language lesson, potentially public and reused by multiple users.
+    """
+
     title = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
+    description = models.TextField()
     prompt_language = models.ForeignKey(
         Language, on_delete=models.CASCADE, related_name="prompt_lessons"
     )
     translation_language = models.ForeignKey(
         Language, on_delete=models.CASCADE, related_name="translation_lessons"
     )
-    is_public = models.BooleanField(default=False)
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="authored_lessons",
+    )
+    access_type = models.ForeignKey(AccessType, on_delete=models.PROTECT, default=1)
+
+    original_lesson = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL
+    )
 
     def __str__(self):
-        return self.title
+        return f"{self.title} by {self.author.username}"
 
 
 class Word(models.Model):
@@ -74,13 +105,18 @@ class Word(models.Model):
     hint = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
-        return self.prompt
+        return f"{self.prompt} -> {self.translation}"
 
 
 class UserLesson(models.Model):
+    """
+    Mapping of user-specific progress with a lesson.
+    Represents the act of importing a lesson for individual study.
+    """
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
-    target_progress = models.PositiveIntegerField(default=0)
+    target_progress = models.IntegerField(default=0)
 
     class Meta:
         unique_together = ("user", "lesson")
@@ -90,13 +126,17 @@ class UserLesson(models.Model):
 
 
 class UserWord(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user_lesson = models.ForeignKey(
+        UserLesson,
+        on_delete=models.CASCADE,
+        related_name="user_words",
+    )
     word = models.ForeignKey(Word, on_delete=models.CASCADE)
     current_progress = models.PositiveIntegerField(default=0)
     notes = models.TextField(blank=True)
 
     class Meta:
-        unique_together = ("user", "word")
+        unique_together = ("user_lesson", "word")
 
     def __str__(self):
-        return f"{self.user.username} - {self.word.prompt}"
+        return f"{self.word.prompt} ({self.user_lesson.user.username})"
