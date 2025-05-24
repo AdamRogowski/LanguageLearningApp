@@ -20,7 +20,7 @@ urlpatterns = [
         name="my-lesson-details",
     ),
     path(
-        "my-lessons/<str:pk>/<int:lesson_id>/<int:my_word_id>/",
+        "my-word-details/<int:my_word_id>/",
         views.myWordDetails,
         name="my-word-details",
     ),

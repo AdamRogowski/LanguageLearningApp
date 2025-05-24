@@ -21,7 +21,7 @@
 
     {% for my_word in my_words %}
         <div>
-            <a href="{% url 'my-word-details' user.id lesson.id my_word.id %}">{{ my_word.word.prompt }} -> {{ my_word.word.translation }}</a>
+            <a href="{% url 'my-word-details' my_word.id %}">{{ my_word.word.prompt }} -> {{ my_word.word.translation }}</a>
         </div>    
     {% endfor %}
 

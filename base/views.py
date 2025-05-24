@@ -215,6 +215,7 @@ def myLessons(request, pk):
     return render(request, "base/my_lessons.html", context)
 
 
+@login_required(login_url="login")
 def myLessonDetails(request, pk, lesson_id):
 
     user = User.objects.get(id=pk)
@@ -252,32 +253,15 @@ def myLessonDetails(request, pk, lesson_id):
     return render(request, "base/my_lesson_details.html", context)
 
 
-def myWordDetails(request, pk, lesson_id, my_word_id):
+@login_required(login_url="login")
+def myWordDetails(request, my_word_id):
 
-    user = User.objects.get(id=pk)
-    if request.user.id != user.id and request.user.is_superuser == False:
-        return HttpResponse("You are not allowed here!")
-
-    # Check if the user has access to the lesson
-    if not UserLesson.objects.filter(user=user, lesson__id=lesson_id).exists():
-        return HttpResponse("You do not have access to this lesson.")
-
-    myWord = UserWord.objects.filter(id=my_word_id, user=user).first()
+    myWord = UserWord.objects.filter(id=my_word_id).first()
     if not myWord:
         return HttpResponse("You do not have this word in your lesson.")
 
-    word = myWord.word  # Get the actual Word object
-    if not word:
-        return HttpResponse("Word not found")
-
-    # This view will display the word details
-    lesson = Lesson.objects.get(id=lesson_id)
-
     context = {
-        "lesson": lesson,
         "my_word": myWord,
-        "word": word,
-        "user": user,
     }
     return render(request, "base/my_word_details.html", context)
 

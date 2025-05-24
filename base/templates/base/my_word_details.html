@@ -2,24 +2,24 @@
 
 {% block content %}
 
-<a href="{% url 'my-lesson-details' user.id lesson.id %}">{{ lesson.title }}</a>
-{% if lesson.is_public%}
+<a href="{% url 'my-lesson-details' my_word.user.id my_word.word.lesson.id %}">{{ my_word.word.lesson.title }}</a>
+{% if my_word.word.lesson.is_public%}
     <h5>  Public lesson  </h5>
 {% else %}
     <h5>  Private lesson  </h5>
 {% endif %}
 
-<h5>{{ lesson.description }}</h5>
+<h5>{{ my_word.word.lesson.description }}</h5>
 
 
  
 
 <div class="my-word-container">
     <div>
-        <h5>Prompt: {{ word.prompt }} </h5>
-        <h5>Translation: {{ word.translation }} </h5>
-        <h5>Usage: {{ word.usage }} </h5>
-        <h5>Hint: {{ word.hint }} </h5>
+        <h5>Prompt: {{ my_word.word.prompt }} </h5>
+        <h5>Translation: {{ my_word.word.translation }} </h5>
+        <h5>Usage: {{ my_word.word.usage }} </h5>
+        <h5>Hint: {{ my_word.word.hint }} </h5>
         <h5>Current Progress: {{ my_word.current_progress }} </h5>
         <h5>Notes: {{ my_word.notes }} </h5>
     </div>    
