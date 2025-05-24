@@ -200,27 +200,92 @@ def deleteComment(request, pk):
 @login_required(login_url="login")
 def myLessons(request, pk):
     user = User.objects.get(id=pk)
-    rooms = user.room_set.all()
-    comments = user.message_set.all()
-    topics = Topic.objects.all()
 
     if request.user.id != user.id and request.user.is_superuser == False:
         return HttpResponse("You are not allowed here!")
 
+    user_lessons = UserLesson.objects.filter(user=user).order_by("-id")
+    lessons = Lesson.objects.filter(userlesson__user=user).order_by("-id")
+
     context = {
         "user": user,
-        "rooms": rooms,
-        "comments": comments,
-        "topics": topics,
+        "user_lessons": user_lessons,
+        "lessons": lessons,
     }
     return render(request, "base/my_lessons.html", context)
+
+
+def myLessonDetails(request, pk, lesson_id):
+
+    user = User.objects.get(id=pk)
+    if request.user.id != user.id and request.user.is_superuser == False:
+        return HttpResponse("You are not allowed here!")
+
+    # Check if the user has access to the lesson
+    if not UserLesson.objects.filter(user=user, lesson__id=lesson_id).exists():
+        return HttpResponse("You do not have access to this lesson.")
+
+    # Get the lesson details
+    lesson_id = int(lesson_id)  # Ensure lesson_id is an integer
+    if not Lesson.objects.filter(id=lesson_id).exists():
+        return HttpResponse("Lesson not found")
+
+    lesson = Lesson.objects.get(id=lesson_id)
+    lesson_is_public = lesson.is_public
+
+    if not lesson.words.exists():
+        return HttpResponse("This lesson has no words")
+
+    myLesson = UserLesson.objects.get(user=user, lesson=lesson)
+
+    myWords = UserWord.objects.filter(user=user, word__lesson=lesson)
+    if not myWords.exists():
+        return HttpResponse("You have no words in this lesson")
+
+    context = {
+        "user": user,
+        "lesson": lesson,
+        "lesson_is_public": lesson_is_public,
+        "my_lesson": myLesson,
+        "my_words": myWords,
+    }
+    return render(request, "base/my_lesson_details.html", context)
+
+
+def myWordDetails(request, pk, lesson_id, my_word_id):
+
+    user = User.objects.get(id=pk)
+    if request.user.id != user.id and request.user.is_superuser == False:
+        return HttpResponse("You are not allowed here!")
+
+    # Check if the user has access to the lesson
+    if not UserLesson.objects.filter(user=user, lesson__id=lesson_id).exists():
+        return HttpResponse("You do not have access to this lesson.")
+
+    myWord = UserWord.objects.filter(id=my_word_id, user=user).first()
+    if not myWord:
+        return HttpResponse("You do not have this word in your lesson.")
+
+    word = myWord.word  # Get the actual Word object
+    if not word:
+        return HttpResponse("Word not found")
+
+    # This view will display the word details
+    lesson = Lesson.objects.get(id=lesson_id)
+
+    context = {
+        "lesson": lesson,
+        "my_word": myWord,
+        "word": word,
+        "user": user,
+    }
+    return render(request, "base/my_word_details.html", context)
 
 
 def lessonsRepository(request):
 
     # This view will display the lessons repository
     public_lessons = Lesson.objects.all().filter(is_public=True).order_by("-id")
-    words = Word.objects.all()
 
     context = {
         "public_lessons": public_lessons,
@@ -228,10 +293,10 @@ def lessonsRepository(request):
     return render(request, "base/lessons_repository.html", context)
 
 
-def lessonDetails(request, pk):
+def lessonDetails(request, lesson_id):
 
     # This view will display the lesson overview
-    lesson = Lesson.objects.get(id=pk)
+    lesson = Lesson.objects.get(id=lesson_id)
     if not lesson:
         return HttpResponse("Lesson not found")
     if not lesson.is_public:
@@ -245,10 +310,10 @@ def lessonDetails(request, pk):
     return render(request, "base/lesson_details.html", context)
 
 
-def wordDetails(request, pk, prompt):
+def wordDetails(request, lesson_id, prompt):
 
     # This view will display the word details
-    lesson = Lesson.objects.get(id=pk)
+    lesson = Lesson.objects.get(id=lesson_id)
     if not lesson.is_public:
         return HttpResponse("This lesson is not public")
     words = lesson.words.all()
@@ -261,3 +326,23 @@ def wordDetails(request, pk, prompt):
         "word": word,
     }
     return render(request, "base/word_details.html", context)
+
+
+@login_required(login_url="login")
+def importLesson(request, lesson_id):
+    try:
+        lesson = Lesson.objects.get(id=lesson_id)
+        user = request.user
+
+        if UserLesson.objects.filter(user=user, lesson=lesson).exists():
+            return HttpResponse("You have already imported this lesson.")
+
+        UserLesson.objects.create(user=user, lesson=lesson, target_progress=0)
+
+        words = Word.objects.filter(lesson=lesson)
+        for word in words:
+            UserWord.objects.create(user=user, word=word, current_progress=0, notes="")
+
+        return redirect("my-lessons", pk=user.id)
+    except Exception as e:
+        return HttpResponse(f"Error: {e}")

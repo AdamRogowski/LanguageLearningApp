@@ -1,0 +1,30 @@
+{% extends "main.html" %}
+
+{% block content %}
+
+<a href="{% url 'my-lesson-details' user.id lesson.id %}">{{ lesson.title }}</a>
+
+{% if lesson.is_public %}
+    <h5>  Public lesson  </h5>
+{% else %}
+    <h5>  Private lesson  </h5>
+{% endif %}
+
+<h5>{{ lesson.description }}</h5>
+
+<h5>{{ my_lesson.target_progress }}</h5>
+
+ 
+
+<div class="my-lesson-container">
+
+
+    {% for my_word in my_words %}
+        <div>
+            <a href="{% url 'my-word-details' user.id lesson.id my_word.id %}">{{ my_word.word.prompt }} -> {{ my_word.word.translation }}</a>
+        </div>    
+    {% endfor %}
+
+</div>  
+
+{% endblock content %}

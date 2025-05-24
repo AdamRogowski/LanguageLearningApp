@@ -14,11 +14,30 @@ urlpatterns = [
     path("delete-room/<str:pk>/", views.deleteRoom, name="delete-room"),
     path("delete-comment/<str:pk>/", views.deleteComment, name="delete-comment"),
     path("my-lessons/<str:pk>/", views.myLessons, name="my-lessons"),
-    path("lessons-repository/", views.lessonsRepository, name="lessons-repository"),
-    path("lessons-repository/<str:pk>/", views.lessonDetails, name="lesson-details"),
     path(
-        "lessons-repository/<str:pk>/<str:prompt>/",
+        "my-lessons/<str:pk>/<int:lesson_id>/",
+        views.myLessonDetails,
+        name="my-lesson-details",
+    ),
+    path(
+        "my-lessons/<str:pk>/<int:lesson_id>/<int:my_word_id>/",
+        views.myWordDetails,
+        name="my-word-details",
+    ),
+    path("lessons-repository/", views.lessonsRepository, name="lessons-repository"),
+    path(
+        "lessons-repository/<int:lesson_id>/",
+        views.lessonDetails,
+        name="lesson-details",
+    ),
+    path(
+        "lessons-repository/<int:lesson_id>/<str:prompt>/",
         views.wordDetails,
         name="word-details",
+    ),
+    path(
+        "import-lesson/<int:lesson_id>/",
+        views.importLesson,
+        name="import-lesson",
     ),
 ]
