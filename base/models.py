@@ -92,6 +92,8 @@ class Lesson(models.Model):
     original_lesson = models.ForeignKey(
         "self", null=True, blank=True, on_delete=models.SET_NULL
     )
+    updated = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.title} by {self.author.username}"
@@ -103,6 +105,8 @@ class Word(models.Model):
     translation = models.CharField(max_length=255)
     usage = models.TextField(blank=True)
     hint = models.CharField(max_length=255, blank=True)
+    updated = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.prompt} -> {self.translation}"

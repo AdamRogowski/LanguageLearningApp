@@ -221,25 +221,44 @@ def myLessons(request, pk):
 
 @login_required(login_url="login")
 def deleteMyLesson(request, my_lesson_id):
-    myLesson = UserLesson.objects.filter(id=my_lesson_id).first()
+    myLesson = (
+        UserLesson.objects.filter(id=my_lesson_id).select_related("lesson").first()
+    )
     if not myLesson:
         return HttpResponse("You do not have this lesson.")
 
-    if request.user.id != myLesson.user.id and request.user.is_superuser == False:
+    user = request.user
+    lesson = myLesson.lesson
+    is_author = hasattr(lesson, "author") and lesson.author == user
+    is_private = lesson.access_type.name == "private"
+
+    # Only the owner of the myLesson or superuser can delete
+    if user.id != myLesson.user.id and not user.is_superuser:
         return HttpResponse("You are not allowed here!")
 
     if request.method == "POST":
-        # Delete all UserWord instances related to this UserLesson
-        # UserWord.objects.filter(
-        #    user=myLesson.user, word__lesson=myLesson.lesson
-        # ).delete()
-        # Then delete the UserLesson instance
-        myLesson.delete()
-        messages.success(request, "Your lesson was deleted successfully.")
-        return redirect("my-lessons", pk=request.user.id)
+        action = request.POST.get("action")
+
+        if action == "delete_both":
+            # Delete lesson from repository and all related UserLesson
+            lesson.delete()
+            messages.success(
+                request,
+                "Lesson and all your references were deleted from the repository.",
+            )
+            return redirect("my-lessons", pk=user.id)
+        elif action == "delete_mylesson":
+            myLesson.delete()
+            messages.success(
+                request,
+                "Your lesson reference was deleted. The lesson remains in the repository.",
+            )
+            return redirect("my-lessons", pk=user.id)
 
     context = {
         "my_lesson": myLesson,
+        "is_author": is_author,
+        "is_private": is_private,
     }
     return render(request, "base/delete_my_lesson.html", context)
 
@@ -255,8 +274,8 @@ def myLessonDetails(request, my_lesson_id):
         return HttpResponse("You are not allowed here!")
 
     myWords = UserWord.objects.filter(user_lesson=myLesson).order_by("-id")
-    if not myWords:
-        return HttpResponse("You do not have any words in this lesson.")
+    # if not myWords:
+    #    return HttpResponse("You do not have any words in this lesson.")
 
     context = {
         "my_lesson": myLesson,

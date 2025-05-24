@@ -4,7 +4,15 @@
 
 <h1><a href="{% url 'lessons-repository' %}">Lessons Repository</a></h1>
 <h2><a href="{% url 'lesson-details' lesson.id %}">{{ lesson.title }}</a></h2>
+published by {{lesson.author}}
+<br>
+published on {{ lesson.created }}
+<br>
+last updated on {{ lesson.updated }}
+<br>
 <h5>{{ lesson.description }}</h5>
+
+<hr>
 
 
  
