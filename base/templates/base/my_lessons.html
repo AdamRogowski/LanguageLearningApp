@@ -2,16 +2,18 @@
 
 {% block content %}
 
-<h1>{{user.username}}'s lessons</h1>
+<h1><a href="{% url 'my-lessons' user.id %}">{{user.username}}'s lessons</a></h1>
 
+<a href="{% url 'lessons-repository' %}">Search lessons repository</a>
+<hr>
   
 
 <div class="my-lessons-container">
 
     <div>
-    {% for lesson in lessons %}
+    {% for my_lesson in my_lessons %}
         <div>
-            <a href="{% url 'my-lesson-details' user.id lesson.id %}">{{ lesson.title }}</a>
+            <a href="{% url 'my-lesson-details' my_lesson.id %}">{{ my_lesson.lesson.title }}</a>
         </div>    
     {% endfor %}
 

@@ -15,7 +15,12 @@ urlpatterns = [
     path("delete-comment/<str:pk>/", views.deleteComment, name="delete-comment"),
     path("my-lessons/<str:pk>/", views.myLessons, name="my-lessons"),
     path(
-        "my-lessons/<str:pk>/<int:lesson_id>/",
+        "delete-my-lesson/<int:my_lesson_id>/",
+        views.deleteMyLesson,
+        name="delete-my-lesson",
+    ),
+    path(
+        "my-lesson-details/<int:my_lesson_id>/",
         views.myLessonDetails,
         name="my-lesson-details",
     ),

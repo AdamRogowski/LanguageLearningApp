@@ -205,48 +205,63 @@ def myLessons(request, pk):
         return HttpResponse("You are not allowed here!")
 
     user_lessons = UserLesson.objects.filter(user=user).order_by("-id")
-    lessons = Lesson.objects.filter(userlesson__user=user).order_by("-id")
+    if not user_lessons:
+        return HttpResponse("You do not have any lessons yet.")
+    # else:
+    #    return HttpResponse(
+    #        f"There ae {user_lessons.count()} lessons for you. {user_lessons[0].lesson.title} is the first one."
+    #    )
 
     context = {
         "user": user,
-        "user_lessons": user_lessons,
-        "lessons": lessons,
+        "my_lessons": user_lessons,
     }
     return render(request, "base/my_lessons.html", context)
 
 
 @login_required(login_url="login")
-def myLessonDetails(request, pk, lesson_id):
+def deleteMyLesson(request, my_lesson_id):
+    myLesson = UserLesson.objects.filter(id=my_lesson_id).first()
+    if not myLesson:
+        return HttpResponse("You do not have this lesson.")
 
-    user = User.objects.get(id=pk)
-    if request.user.id != user.id and request.user.is_superuser == False:
+    if request.user.id != myLesson.user.id and request.user.is_superuser == False:
         return HttpResponse("You are not allowed here!")
 
-    # Check if the user has access to the lesson
-    if not UserLesson.objects.filter(user=user, lesson__id=lesson_id).exists():
-        return HttpResponse("You do not have access to this lesson.")
-
-    # Get the lesson details
-    lesson_id = int(lesson_id)  # Ensure lesson_id is an integer
-    if not Lesson.objects.filter(id=lesson_id).exists():
-        return HttpResponse("Lesson not found")
-
-    lesson = Lesson.objects.get(id=lesson_id)
-    lesson_is_public = lesson.is_public
-
-    if not lesson.words.exists():
-        return HttpResponse("This lesson has no words")
-
-    myLesson = UserLesson.objects.get(user=user, lesson=lesson)
-
-    myWords = UserWord.objects.filter(user=user, word__lesson=lesson)
-    if not myWords.exists():
-        return HttpResponse("You have no words in this lesson")
+    if request.method == "POST":
+        # Delete all UserWord instances related to this UserLesson
+        UserWord.objects.filter(
+            user=myLesson.user, word__lesson=myLesson.lesson
+        ).delete()
+        # Then delete the UserLesson instance
+        myLesson.delete()
+        messages.success(request, "Your lesson was deleted successfully.")
+        return redirect("my-lessons", pk=request.user.id)
 
     context = {
-        "user": user,
-        "lesson": lesson,
-        "lesson_is_public": lesson_is_public,
+        "my_lesson": myLesson,
+        "my_words": UserWord.objects.filter(
+            user=myLesson.user, word__lesson=myLesson.lesson
+        ).order_by("-id"),
+    }
+    return render(request, "base/delete_my_lesson.html", context)
+
+
+@login_required(login_url="login")
+def myLessonDetails(request, my_lesson_id):
+
+    myLesson = UserLesson.objects.filter(id=my_lesson_id).first()
+    if not myLesson:
+        return HttpResponse("You do not have this lesson.")
+
+    if request.user.id != myLesson.user.id and request.user.is_superuser == False:
+        return HttpResponse("You are not allowed here!")
+
+    myWords = UserWord.objects.filter(
+        user=myLesson.user, word__lesson=myLesson.lesson
+    ).order_by("-id")
+
+    context = {
         "my_lesson": myLesson,
         "my_words": myWords,
     }
@@ -260,7 +275,15 @@ def myWordDetails(request, my_word_id):
     if not myWord:
         return HttpResponse("You do not have this word in your lesson.")
 
+    if request.user.id != myWord.user.id and request.user.is_superuser == False:
+        return HttpResponse("You are not allowed here!")
+
+    myLesson = UserLesson.objects.filter(
+        user=myWord.user, lesson=myWord.word.lesson
+    ).first()
+
     context = {
+        "my_lesson": myLesson,
         "my_word": myWord,
     }
     return render(request, "base/my_word_details.html", context)

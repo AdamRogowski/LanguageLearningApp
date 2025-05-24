@@ -2,7 +2,8 @@
 
 {% block content %}
 
-<a href="{% url 'lesson-details' lesson.id %}">{{ lesson.title }}</a>
+<h1><a href="{% url 'lessons-repository' %}">Lessons Repository</a></h1>
+<h2><a href="{% url 'lesson-details' lesson.id %}">{{ lesson.title }}</a></h2>
 <h5>{{ lesson.description }}</h5>
 
 

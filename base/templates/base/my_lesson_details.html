@@ -2,28 +2,50 @@
 
 {% block content %}
 
-<a href="{% url 'my-lesson-details' user.id lesson.id %}">{{ lesson.title }}</a>
+<h1><a href="{% url 'my-lessons' my_lesson.user.id %}">{{my_lesson.user.username}}'s lessons</a></h1>
+<h2><a href="{% url 'my-lesson-details' my_lesson.id %}">{{ my_lesson.lesson.title }}</a></h2>
 
-{% if lesson.is_public %}
+{% if my_lesson.lesson.is_public %}
     <h5>  Public lesson  </h5>
 {% else %}
     <h5>  Private lesson  </h5>
 {% endif %}
 
-<h5>{{ lesson.description }}</h5>
+<h5>Lesson description: {{ my_lesson.lesson.description }}</h5>
 
-<h5>{{ my_lesson.target_progress }}</h5>
+<h5>Target progress: {{ my_lesson.target_progress }}</h5>
 
+<form action="{% url 'delete-my-lesson' my_lesson.id %}" method="post">
+    {% csrf_token %}
+    <button type="submit">Delete lesson</button>
+</form>
  
 
 <div class="my-lesson-container">
 
 
-    {% for my_word in my_words %}
-        <div>
-            <a href="{% url 'my-word-details' my_word.id %}">{{ my_word.word.prompt }} -> {{ my_word.word.translation }}</a>
-        </div>    
-    {% endfor %}
+    <table>
+        <thead>
+            <tr>
+                <th>Prompt <br>({{my_lesson.lesson.prompt_language}})</th>
+                <th>Translation <br> ({{my_lesson.lesson.translation_language}})</th>
+                <th>Progress</th>
+                <th>Details</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for my_word in my_words %}
+            <tr>
+                <td>{{ my_word.word.prompt }}</td>
+                <td>{{ my_word.word.translation }}</td>
+                <td>{{ my_word.current_progress }}</td>
+                <td>
+                    <a href="{% url 'my-word-details' my_word.id %}">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
 </div>  
 
