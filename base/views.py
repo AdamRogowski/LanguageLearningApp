@@ -1,3 +1,6 @@
+from django.forms import modelform_factory
+from django.forms import formset_factory, CharField, Form
+from django.db import transaction
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.db.models import Q  # Import Q for complex queries
@@ -220,6 +223,66 @@ def myLessons(request, pk):
 
 
 @login_required(login_url="login")
+def myLessonDetails(request, my_lesson_id):
+
+    myLesson = UserLesson.objects.filter(id=my_lesson_id).first()
+    if not myLesson:
+        return HttpResponse("You do not have this lesson.")
+
+    if request.user.id != myLesson.user.id and request.user.is_superuser == False:
+        return HttpResponse("You are not allowed here!")
+
+    myWords = UserWord.objects.filter(user_lesson=myLesson).order_by("-id")
+
+    is_private = myLesson.lesson.access_type.name == "private"
+    if request.user == myLesson.lesson.author or myLesson.lesson.access_type.name in [
+        "write"
+    ]:
+        can_edit = True
+    else:
+        can_edit = False
+
+    wordForm = modelform_factory(
+        Word,
+        fields=["prompt", "translation", "usage", "hint"],
+    )
+
+    if can_edit:
+
+        if request.method == "POST":
+            wordForm = wordForm(request.POST)
+            if wordForm.is_valid():
+                new_word = wordForm.save(commit=False)
+                # Check if the word already exists in the lesson
+                if Word.objects.filter(
+                    prompt=new_word.prompt, lesson=myLesson.lesson
+                ).exists():
+                    messages.error(request, "This word already exists in the lesson.")
+                    return redirect("my-lesson-details", my_lesson_id=myLesson.id)
+
+                new_word.lesson = myLesson.lesson  # Associate with the lesson
+                new_word.save()
+                # Create a UserWord instance for the user lesson
+                user_word = UserWord()
+                user_word.word = new_word  # Associate the word
+                user_word.current_progress = 0  # Default progress
+                user_word.notes = ""  # Default notes
+                user_word.user_lesson = myLesson  # Associate with the user lesson
+                user_word.save()
+                messages.success(request, "Word created successfully!")
+                return redirect("my-lesson-details", my_lesson_id=myLesson.id)
+
+    context = {
+        "my_lesson": myLesson,
+        "my_words": myWords,
+        "word_form": wordForm,
+        "can_edit": can_edit,
+        "is_private": is_private,
+    }
+    return render(request, "base/my_lesson_details.html", context)
+
+
+@login_required(login_url="login")
 def deleteMyLesson(request, my_lesson_id):
     myLesson = (
         UserLesson.objects.filter(id=my_lesson_id).select_related("lesson").first()
@@ -261,27 +324,6 @@ def deleteMyLesson(request, my_lesson_id):
         "is_private": is_private,
     }
     return render(request, "base/delete_my_lesson.html", context)
-
-
-@login_required(login_url="login")
-def myLessonDetails(request, my_lesson_id):
-
-    myLesson = UserLesson.objects.filter(id=my_lesson_id).first()
-    if not myLesson:
-        return HttpResponse("You do not have this lesson.")
-
-    if request.user.id != myLesson.user.id and request.user.is_superuser == False:
-        return HttpResponse("You are not allowed here!")
-
-    myWords = UserWord.objects.filter(user_lesson=myLesson).order_by("-id")
-    # if not myWords:
-    #    return HttpResponse("You do not have any words in this lesson.")
-
-    context = {
-        "my_lesson": myLesson,
-        "my_words": myWords,
-    }
-    return render(request, "base/my_lesson_details.html", context)
 
 
 @login_required(login_url="login")
@@ -375,3 +417,108 @@ def importLesson(request, lesson_id):
         return redirect("my-lessons", pk=user.id)
     except Exception as e:
         return HttpResponse(f"Error: {e}")
+
+
+# ------------------------------------Create lesson view-------------------------------------
+
+
+# Simple Word Input Form
+# class WordInputForm(Form):
+#    prompt = CharField(label="Prompt", max_length=100)
+#    translation = CharField(label="Translation", max_length=100)
+
+
+# WordFormSet = formset_factory(WordInputForm, extra=3)
+
+
+@login_required(login_url="login")
+@transaction.atomic  # ensures rollback on failure
+def createLesson(request):
+
+    # Form for Lesson
+    LessonForm = modelform_factory(
+        Lesson,
+        fields=[
+            "title",
+            "description",
+            "prompt_language",
+            "translation_language",
+            "access_type",
+        ],
+    )
+
+    if request.method == "POST":
+        lesson_form = LessonForm(request.POST)
+
+        if lesson_form.is_valid():
+            # Save lesson and associate it with the user
+            lesson = lesson_form.save(commit=False)
+            lesson.author = request.user
+            lesson.save()
+
+            # Create user's personal reference
+            myLesson = UserLesson.objects.create(user=request.user, lesson=lesson)
+
+            messages.success(request, "Lesson created successfully!")
+            return redirect("my-lesson-details", my_lesson_id=myLesson.id)
+    else:
+        lesson_form = LessonForm()
+
+    context = {"lesson_form": lesson_form}
+    return render(request, "base/create_lesson.html", context)
+
+
+@login_required(login_url="login")
+@transaction.atomic
+def copyLesson(request, my_lesson_id):
+
+    myLesson = UserLesson.objects.filter(id=my_lesson_id).first()
+    if not myLesson:
+        return HttpResponse("You do not have this lesson.")
+
+    if request.user.id != myLesson.user.id and request.user.is_superuser == False:
+        return HttpResponse("You are not allowed here!")
+
+    # Check if the lesson is private
+    if myLesson.lesson.access_type.name == "private":
+        return HttpResponse("You cannot copy a private lesson.")
+
+    # Create a new lesson based on the existing one
+    lesson = myLesson.lesson
+    new_lesson = Lesson(
+        title=lesson.title,
+        description=lesson.description,
+        prompt_language=lesson.prompt_language,
+        translation_language=lesson.translation_language,
+        author=request.user,
+        access_type=AccessType.objects.get(name="private"),  # Set to private by default
+        original_lesson=lesson,  # Link to the original lesson
+    )
+    new_lesson.save()
+    # Create a UserLesson for the new lesson
+    new_user_lesson = UserLesson.objects.create(user=request.user, lesson=new_lesson)
+
+    # Copy words from the original lesson to the new lesson
+    words = lesson.words.all()
+    for word in words:
+        new_word = Word(
+            lesson=new_lesson,
+            prompt=word.prompt,
+            translation=word.translation,
+            usage=word.usage,
+            hint=word.hint,
+        )
+        new_word.save()
+        # Create a UserWord for the new UserLesson
+        UserWord.objects.create(
+            user_lesson=new_user_lesson,
+            word=new_word,
+            current_progress=0,  # Default progress
+            notes="",  # Default notes
+        )
+    # Remove the original lesson from the UserLesson
+    myLesson.delete()
+
+    messages.success(request, "Lesson copied successfully!")
+
+    return redirect("my-lesson-details", my_lesson_id=new_user_lesson.id)

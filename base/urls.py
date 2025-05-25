@@ -45,4 +45,6 @@ urlpatterns = [
         views.importLesson,
         name="import-lesson",
     ),
+    path("create-lesson/", views.createLesson, name="create-lesson"),
+    path("copy_lesson/<int:my_lesson_id>/", views.copyLesson, name="copy-lesson"),
 ]

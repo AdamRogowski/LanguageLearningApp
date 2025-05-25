@@ -15,6 +15,11 @@
     {% csrf_token %}
     <button type="submit">Delete lesson</button>
 </form>
+
+<form action="{% url 'copy-lesson' my_lesson.id %}" method="post">
+    {% csrf_token %}
+    <button type="submit" {% if is_private %}disabled{% endif %}>Copy lesson</button>
+</form>
  
 
 <div class="my-lesson-container">
@@ -42,6 +47,18 @@
             {% endfor %}
         </tbody>
     </table>
+
+    {% if can_edit %}
+    <div>
+    <h3>Add a new word to the lesson</h3>
+    <form method="POST" action="">
+        {% csrf_token %}
+        {{ word_form.as_p }}
+        <input type="submit" value="Add word" />
+    </form>
+
+    </div>
+    {% endif %}
 
 </div>  
 

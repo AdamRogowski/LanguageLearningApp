@@ -7,3 +7,10 @@ class RoomForm(ModelForm):
         model = Room
         fields = "__all__"
         exclude = ["host", "participants"]
+
+
+# class UserWordForm(ModelForm):
+#    class Meta:
+#        model = Topic
+#        fields = "__all__"
+#        exclude = []

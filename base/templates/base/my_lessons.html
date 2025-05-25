@@ -5,6 +5,11 @@
 <h1><a href="{% url 'my-lessons' user.id %}">{{user.username}}'s lessons</a></h1>
 
 <a href="{% url 'lessons-repository' %}">Search lessons repository</a>
+
+<form action="{% url 'create-lesson' %}" method="post">
+    {% csrf_token %}
+    <button type="submit">Create lesson</button>
+</form>
 <hr>
   
 
