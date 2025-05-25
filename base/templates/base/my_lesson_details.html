@@ -20,6 +20,10 @@
     {% csrf_token %}
     <button type="submit" {% if is_private %}disabled{% endif %}>Copy lesson</button>
 </form>
+
+{% if can_edit %}
+    <a href="{% url 'edit-lesson' my_lesson.id %}">Edit lesson</a>
+{% endif %}
  
 
 <div class="my-lesson-container">

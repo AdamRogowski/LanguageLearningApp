@@ -1,5 +1,5 @@
 from django.forms import ModelForm
-from .models import Room, Topic, Message
+from .models import Room, Lesson, Word
 
 
 class RoomForm(ModelForm):
@@ -9,8 +9,20 @@ class RoomForm(ModelForm):
         exclude = ["host", "participants"]
 
 
-# class UserWordForm(ModelForm):
-#    class Meta:
-#        model = Topic
-#        fields = "__all__"
-#        exclude = []
+class LessonForm(ModelForm):
+    class Meta:
+        model = Lesson
+        fields = [
+            "title",
+            "description",
+            "prompt_language",
+            "translation_language",
+            "access_type",
+        ]
+
+
+class WordForm(ModelForm):
+    class Meta:
+        model = Word
+        fields = "__all__"
+        exclude = ["lesson", "created", "updated"]

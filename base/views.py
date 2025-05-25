@@ -10,7 +10,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
 from .models import Room, Topic, Message, Lesson, Word, UserLesson, UserWord, AccessType
-from .forms import RoomForm
+from .forms import RoomForm, LessonForm, WordForm
 
 """
 rooms = [
@@ -242,15 +242,12 @@ def myLessonDetails(request, my_lesson_id):
     else:
         can_edit = False
 
-    wordForm = modelform_factory(
-        Word,
-        fields=["prompt", "translation", "usage", "hint"],
-    )
+    wordForm = WordForm()
 
     if can_edit:
 
         if request.method == "POST":
-            wordForm = wordForm(request.POST)
+            wordForm = WordForm(request.POST)
             if wordForm.is_valid():
                 new_word = wordForm.save(commit=False)
                 # Check if the word already exists in the lesson
@@ -269,6 +266,10 @@ def myLessonDetails(request, my_lesson_id):
                 user_word.notes = ""  # Default notes
                 user_word.user_lesson = myLesson  # Associate with the user lesson
                 user_word.save()
+                myLesson.lesson.updated = (
+                    new_word.updated
+                )  # Update lesson's updated time
+                myLesson.lesson.save()  # Save the lesson to update the timestamp
                 messages.success(request, "Word created successfully!")
                 return redirect("my-lesson-details", my_lesson_id=myLesson.id)
 
@@ -435,18 +436,6 @@ def importLesson(request, lesson_id):
 @transaction.atomic  # ensures rollback on failure
 def createLesson(request):
 
-    # Form for Lesson
-    LessonForm = modelform_factory(
-        Lesson,
-        fields=[
-            "title",
-            "description",
-            "prompt_language",
-            "translation_language",
-            "access_type",
-        ],
-    )
-
     if request.method == "POST":
         lesson_form = LessonForm(request.POST)
 
@@ -522,3 +511,39 @@ def copyLesson(request, my_lesson_id):
     messages.success(request, "Lesson copied successfully!")
 
     return redirect("my-lesson-details", my_lesson_id=new_user_lesson.id)
+
+
+@login_required(login_url="login")
+@transaction.atomic
+def editLesson(request, my_lesson_id):
+
+    myLesson = UserLesson.objects.filter(id=my_lesson_id).first()
+
+    if not myLesson:
+        return HttpResponse("You do not have this lesson.")
+
+    if request.user.id != myLesson.user.id and request.user.is_superuser == False:
+        return HttpResponse("You are not allowed here!")
+
+    if not (
+        request.user == myLesson.lesson.author
+        or myLesson.lesson.access_type.name in ["write"]
+    ):
+        return HttpResponse("You do not have rights to edit this lesson!")
+
+    edit_lesson_form = LessonForm(instance=myLesson.lesson)
+
+    if request.method == "POST":
+        edit_lesson_form = LessonForm(request.POST, instance=myLesson.lesson)
+        print("POST data:", request.POST)
+        print("Form errors:", edit_lesson_form.errors)
+        if edit_lesson_form.is_valid():
+            edit_lesson_form.save()
+            messages.success(request, "Lesson updated successfully!")
+            return redirect("my-lesson-details", my_lesson_id=myLesson.id)
+
+    context = {
+        "edit_lesson_form": edit_lesson_form,
+        "my_lesson": myLesson,
+    }
+    return render(request, "base/edit_lesson.html", context)
