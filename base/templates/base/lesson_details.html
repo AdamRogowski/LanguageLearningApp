@@ -5,7 +5,11 @@
 <h1><a href="{% url 'lessons-repository' %}">Lessons Repository</a></h1>
 <h2><a href="{% url 'lesson-details' lesson.id %}">{{ lesson.title }}</a></h2>
 {% if lesson.original_lesson %}
-    <h3>Original Lesson: <a href="{% url 'lesson-details' lesson.original_lesson.id %}">{{ lesson.original_lesson.title }}</a></h3>
+    {% if lesson.original_lesson.access_type.name == "private" %}
+        <h3>Original Lesson: {{ lesson.original_lesson.title }} (private)</h3>
+    {% else %}
+        <h3>Original Lesson: <a href="{% url 'lesson-details' lesson.original_lesson.id %}">{{ lesson.original_lesson.title }}</a></h3>
+    {% endif %}
 {% endif %}
 
 published by {{lesson.author}}

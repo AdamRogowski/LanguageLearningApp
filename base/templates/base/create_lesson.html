@@ -6,10 +6,8 @@
 <form method="post">
   {% csrf_token %}
   {{ lesson_form.as_p }}
-
+  <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'" style="display:inline;">Cancel</button>
   <button type="submit">Create Lesson</button>
 </form>   
-    
-
 
 {% endblock content %}
