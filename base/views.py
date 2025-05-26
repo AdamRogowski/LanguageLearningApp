@@ -1,5 +1,3 @@
-from django.forms import modelform_factory
-from django.forms import formset_factory, CharField, Form
 from django.db import transaction
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
@@ -9,17 +7,9 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
-from .models import Room, Topic, Message, Lesson, Word, UserLesson, UserWord, AccessType
-from .forms import RoomForm, LessonForm, WordForm
+from .models import Lesson, Word, UserLesson, UserWord, AccessType
+from .forms import LessonForm, WordForm
 from django.utils import timezone
-
-"""
-rooms = [
-    {"id": 1, "name": "Room 1"},
-    {"id": 2, "name": "Room 2"},
-    {"id": 3, "name": "Room 3"},
-]
-"""
 
 
 def loginPage(request):
@@ -86,105 +76,6 @@ def home(request):
     return render(request, "base/home.html", context)
 
 
-def room(request, pk):
-    room = Room.objects.get(id=pk)
-    comments = room.message_set.all().order_by("-created")
-    participants = room.participants.all()
-
-    if request.method == "POST":
-        room.message_set.create(
-            user=request.user, body=request.POST.get("body"), room=room
-        )
-        room.participants.add(request.user)
-        return redirect("room", pk=room.id)
-
-    context = {"room": room, "comments": comments, "participants": participants}
-    return render(request, "base/room.html", context)
-
-
-def userProfile(request, pk):
-    user_profile = User.objects.get(id=pk)
-    rooms = user_profile.room_set.all()
-    comments = user_profile.message_set.all()
-    topics = Topic.objects.all()
-
-    context = {
-        "user_profile": user_profile,
-        "rooms": rooms,
-        "comments": comments,
-        "topics": topics,
-    }
-    return render(request, "base/profile.html", context)
-
-
-@login_required(login_url="login")
-def createRoom(request):
-    form = RoomForm()
-    if request.method == "POST":
-        form = RoomForm(request.POST)
-
-        if form.is_valid():
-            room = form.save(commit=False)
-            room.host = request.user
-            room.save()
-            return redirect("home")
-
-    context = {"form": form}
-    return render(request, "base/room_form.html", context)
-
-
-@login_required(login_url="login")
-def updateRoom(request, pk):
-    room = Room.objects.get(id=pk)
-    form = RoomForm(instance=room)
-
-    if request.user != room.host and request.user.is_superuser == False:
-        return HttpResponse("You are not allowed here!")
-
-    if request.method == "POST":
-        form = RoomForm(request.POST, instance=room)
-        if form.is_valid():
-            print("Form is valid")
-            form.save()
-            return redirect("home")
-
-    context = {"form": form, "room": room}
-    return render(request, "base/room_form.html", context)
-
-
-@login_required(login_url="login")
-def deleteRoom(request, pk):
-    room = Room.objects.get(id=pk)
-
-    if request.user != room.host and request.user.is_superuser == False:
-        return HttpResponse("You are not allowed here!")
-
-    if request.method == "POST":
-        room.delete()
-        return redirect("home")
-    context = {"obj": room}
-    return render(request, "base/delete.html", context)
-
-
-@login_required(login_url="login")
-def deleteComment(request, pk):
-    comment = Message.objects.get(id=pk)
-    # room_id = comment.room.id  # Get the room ID before deleting the comment
-
-    if request.user != comment.user and request.user.is_superuser == False:
-        return HttpResponse("You are not allowed here!")
-
-    if request.method == "POST":
-        comment.delete()
-        return redirect("home")  # Redirect to the room
-
-    context = {"obj": comment}
-    return render(request, "base/delete.html", context)
-
-
-# Language learning app views.py
-
-
 @login_required(login_url="login")
 def myLessons(request, pk):
     user = User.objects.get(id=pk)
@@ -193,13 +84,6 @@ def myLessons(request, pk):
         return HttpResponse("You are not allowed here!")
 
     user_lessons = UserLesson.objects.filter(user=user).order_by("-id")
-    # if not user_lessons:
-    #    return HttpResponse("You do not have any lessons yet.")
-    # else:
-    #    return HttpResponse(
-    #        f"There ae {user_lessons.count()} lessons for you. {user_lessons[0].lesson.title} is the first one."
-    #    )
-
     context = {
         "user": user,
         "my_lessons": user_lessons,
@@ -216,6 +100,18 @@ def myLessonDetails(request, my_lesson_id):
 
     if request.user.id != myLesson.user.id and request.user.is_superuser == False:
         return HttpResponse("You are not allowed here!")
+
+    # --- Ensure all words in the lesson have a corresponding UserWord for this UserLesson ---
+    lesson_words = myLesson.lesson.words.all()
+    existing_userword_word_ids = set(
+        UserWord.objects.filter(user_lesson=myLesson).values_list("word_id", flat=True)
+    )
+    missing_words = [w for w in lesson_words if w.id not in existing_userword_word_ids]
+    for word in missing_words:
+        UserWord.objects.create(
+            user_lesson=myLesson, word=word, current_progress=0, notes=""
+        )
+    # ----------------------------------------------------------------------
 
     myWords = UserWord.objects.filter(user_lesson=myLesson).order_by("-id")
 
@@ -437,18 +333,6 @@ def importLesson(request, lesson_id):
         return redirect("my-lessons", pk=user.id)
     except Exception as e:
         return HttpResponse(f"Error: {e}")
-
-
-# ------------------------------------Create lesson view-------------------------------------
-
-
-# Simple Word Input Form
-# class WordInputForm(Form):
-#    prompt = CharField(label="Prompt", max_length=100)
-#    translation = CharField(label="Translation", max_length=100)
-
-
-# WordFormSet = formset_factory(WordInputForm, extra=3)
 
 
 @login_required(login_url="login")

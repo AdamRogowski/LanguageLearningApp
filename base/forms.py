@@ -1,13 +1,6 @@
 from django.forms import ModelForm
-from .models import Room, Lesson, Word
+from .models import Lesson, Word
 from django import forms
-
-
-class RoomForm(ModelForm):
-    class Meta:
-        model = Room
-        fields = "__all__"
-        exclude = ["host", "participants"]
 
 
 class LessonForm(ModelForm):
