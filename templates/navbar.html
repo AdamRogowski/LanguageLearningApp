@@ -3,10 +3,7 @@
     <img src="{% static 'images/logo.png' %}" alt="Home" style="height: 100px;">
 </a>
 
-<form method="GET" action="{% url 'home' %}">
-    <input type="text" name="q" placeholder="Search...">
-    <button type="submit">Search</button>
-</form>
+<br>
 
 {% if user.is_authenticated %}
     <p>Welcome, {{ user.username }}!</p>

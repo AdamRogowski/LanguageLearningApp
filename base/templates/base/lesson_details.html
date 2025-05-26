@@ -30,9 +30,8 @@ last updated on {{ lesson.updated }}
 <div class="lesson-container">
 
     {% if request.user.is_authenticated %}
-        <form action="{% url 'import-lesson' lesson.id %}" method="post">
-            {% csrf_token %}
-            <button type="submit">Import Lesson</button>
+        <form action="{% url 'import-lesson' lesson.id %}" method="get">
+            <button type="submit" {% if not can_import %}disabled{% endif %}  >Import Lesson</button>
         </form>
     {% endif %}
 

@@ -72,18 +72,6 @@ def registerPage(request):
 
 
 def home(request):
-    q = request.GET.get("q") if request.GET.get("q") != None else ""
-    rooms = Room.objects.filter(
-        Q(topic__name__icontains=q) | Q(name__icontains=q) | Q(description__icontains=q)
-    )
-    room_count = rooms.count()
-    topics = Topic.objects.all()
-
-    comments = Message.objects.filter(
-        Q(room__topic__name__icontains=q)
-        | Q(room__name__icontains=q)
-        | Q(body__icontains=q)
-    ).order_by("-created")
 
     user = request.user
     if user.is_authenticated:
@@ -92,10 +80,6 @@ def home(request):
         user = None
 
     context = {
-        "rooms": rooms,
-        "topics": topics,
-        "room_count": room_count,
-        "comments": comments,
         "user": user,
     }
     return render(request, "base/home.html", context)
@@ -353,6 +337,14 @@ def lessonsRepository(request):
         access_type__name__in=["readonly", "write"]
     ).order_by("-id")
 
+    lesson_search_query = request.GET.get("q") if request.GET.get("q") != None else ""
+    public_lessons = public_lessons.filter(
+        Q(title__icontains=lesson_search_query)
+        | Q(description__icontains=lesson_search_query)
+        | Q(prompt_language__name__icontains=lesson_search_query)
+        | Q(translation_language__name__icontains=lesson_search_query)
+    ).order_by("-created")
+
     context = {
         "public_lessons": public_lessons,
     }
@@ -367,11 +359,22 @@ def lessonDetails(request, lesson_id):
         return HttpResponse("Lesson not found")
     if lesson.access_type.name == "private":
         return HttpResponse("This lesson is not public")
+
+    user = request.user
+    if user.is_authenticated:
+        can_import = not UserLesson.objects.filter(user=user, lesson=lesson).exists()
+    else:
+        can_import = False
+
+    if lesson.access_type.name == "private":
+        return HttpResponse("This lesson is private and cannot be imported.")
+
     words = lesson.words.all()
 
     context = {
         "lesson": lesson,
         "words": words,
+        "can_import": can_import,
     }
     return render(request, "base/lesson_details.html", context)
 
@@ -535,8 +538,6 @@ def editLesson(request, my_lesson_id):
 
     if request.method == "POST":
         edit_lesson_form = LessonForm(request.POST, instance=myLesson.lesson)
-        print("POST data:", request.POST)
-        print("Form errors:", edit_lesson_form.errors)
         if edit_lesson_form.is_valid():
             edit_lesson_form.save()
             messages.success(request, "Lesson updated successfully!")
@@ -547,3 +548,45 @@ def editLesson(request, my_lesson_id):
         "my_lesson": myLesson,
     }
     return render(request, "base/edit_lesson.html", context)
+
+
+@login_required(login_url="login")
+@transaction.atomic
+def editWord(request, my_word_id):
+
+    myWord = UserWord.objects.filter(id=my_word_id).first()
+
+    if not myWord:
+        return HttpResponse("You do not have this word in your lesson.")
+
+    if (
+        request.user.id != myWord.user_lesson.user.id
+        and request.user.is_superuser == False
+    ):
+        return HttpResponse("You are not allowed here!")
+
+    if not (
+        request.user == myWord.user_lesson.lesson.author
+        or myWord.user_lesson.lesson.access_type.name in ["write"]
+    ):
+        return HttpResponse("You do not have rights to edit this lesson!")
+
+    edit_word_form = WordForm(instance=myWord.word)
+
+    if request.method == "POST":
+        edit_word_form = WordForm(request.POST, instance=myWord.word)
+        if edit_word_form.is_valid():
+            edit_word_form.save()
+
+            # Update the lesson's updated time to reflect changes
+            myWord.user_lesson.lesson.updated = edit_word_form.instance.updated
+            myWord.user_lesson.lesson.save()
+
+            messages.success(request, "Lesson updated successfully!")
+            return redirect("my-lesson-details", my_lesson_id=myWord.user_lesson.id)
+
+    context = {
+        "edit_word_form": edit_word_form,
+        "my_word": myWord,
+    }
+    return render(request, "base/edit_word.html", context)

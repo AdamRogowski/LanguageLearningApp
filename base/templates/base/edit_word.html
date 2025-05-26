@@ -1,0 +1,15 @@
+{% extends "main.html" %}
+
+{% block content %}
+
+<h1><a href="{% url 'my-lessons' my_word.user_lesson.user.id %}">{{my_word.user_lesson.user.username}}'s lessons</a></h1>
+<h2><a href="{% url 'my-lesson-details' my_word.user_lesson.id %}">{{ my_word.user_lesson.lesson.title }}</a></h2>
+
+<form method="POST" action="">
+    {% csrf_token %}
+    {{ edit_word_form.as_p }}
+    <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'" style="display:inline;">Cancel</button>
+    <input type="submit" value="Submit" />
+</form>
+
+{% endblock content %}

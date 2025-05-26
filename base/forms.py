@@ -1,5 +1,6 @@
 from django.forms import ModelForm
 from .models import Room, Lesson, Word
+from django import forms
 
 
 class RoomForm(ModelForm):
@@ -19,6 +20,9 @@ class LessonForm(ModelForm):
             "translation_language",
             "access_type",
         ]
+        widgets = {
+            "title": forms.TextInput(attrs={"autofocus": "autofocus"}),
+        }
 
 
 class WordForm(ModelForm):
@@ -26,3 +30,6 @@ class WordForm(ModelForm):
         model = Word
         fields = "__all__"
         exclude = ["lesson", "created", "updated"]
+        widgets = {
+            "prompt": forms.TextInput(attrs={"autofocus": "autofocus"}),
+        }

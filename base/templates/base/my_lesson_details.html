@@ -34,6 +34,7 @@
                 <th>Translation <br> ({{my_lesson.lesson.translation_language}})</th>
                 <th>Progress</th>
                 <th>Details</th>
+                <th>Edit</th>
             </tr>
         </thead>
         <tbody>
@@ -44,6 +45,11 @@
                 <td>{{ my_word.current_progress }}</td>
                 <td>
                     <a href="{% url 'my-word-details' my_word.id %}">View</a>
+                </td>
+                <td>
+                    <form action="{% url 'edit-word' my_word.id %}" method="get">
+                        <button type="submit" {% if not can_edit %}disabled{% endif %}>Edit</button>
+                    </form>
                 </td>
             </tr>
             {% endfor %}
