@@ -10,6 +10,7 @@
     {{ edit_word_form.as_p }}
     <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'" style="display:inline;">Cancel</button>
     <input type="submit" value="Submit" />
+    <a href="{% url 'delete-word' my_word.id %}" style="display:inline;" class="button" style="color:red;">Delete</a>
 </form>
 
 {% endblock content %}

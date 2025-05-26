@@ -5,11 +5,11 @@
 {% if page == 'login' %}
 
 <div>
-    <form method="POST", action="">
+    <form method="POST" action="">
         {% csrf_token %}
         
         <label for="username">Username:</label>
-        <input type="text" name="username" placeholder="Enter Username" />
+        <input type="text" name="username" id="username" placeholder="Enter Username" autofocus />
 
         <label for="password">Password:</label>
         <input type="password" name="password" placeholder="Enter Password" />

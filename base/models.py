@@ -87,6 +87,19 @@ class Lesson(models.Model):
         on_delete=models.CASCADE,
         related_name="authored_lessons",
     )
+
+    # TODO: Uncomment if contributors are needed
+    # To track contributors to the lesson; can be useful for collaborative lessons or community contributions.
+    # contributors = models.ManyToManyField(
+    #    User,
+    #    related_name="contributed_lessons",
+    #    blank=True,
+    # )
+
+    # changes_log = models.TextField(
+    #    blank=True, help_text="Log of changes made to this lesson."
+    # )
+
     access_type = models.ForeignKey(AccessType, on_delete=models.PROTECT, default=1)
 
     original_lesson = models.ForeignKey(
@@ -144,3 +157,24 @@ class UserWord(models.Model):
 
     def __str__(self):
         return f"{self.word.prompt} ({self.user_lesson.user.username})"
+
+
+class Rating(models.Model):
+    """
+    Represents a rating given by a user to a lesson.
+    Rating must be an integer from 1 to 5.
+    """
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
+    rating = models.PositiveSmallIntegerField(
+        default=1,
+        choices=[(i, str(i)) for i in range(1, 6)],
+        help_text="Rating must be an integer from 1 to 5.",
+    )
+
+    class Meta:
+        unique_together = ("user", "lesson")
+
+    def __str__(self):
+        return f"{self.user.username} rated {self.lesson.title} with {self.rating}"

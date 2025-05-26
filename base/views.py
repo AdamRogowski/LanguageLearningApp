@@ -11,6 +11,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
 from .models import Room, Topic, Message, Lesson, Word, UserLesson, UserWord, AccessType
 from .forms import RoomForm, LessonForm, WordForm
+from django.utils import timezone
 
 """
 rooms = [
@@ -27,7 +28,7 @@ def loginPage(request):
         return redirect("home")
 
     if request.method == "POST":
-        username = request.POST.get("username").lower()
+        username = request.POST.get("username")
         password = request.POST.get("password")
 
         try:
@@ -590,3 +591,45 @@ def editWord(request, my_word_id):
         "my_word": myWord,
     }
     return render(request, "base/edit_word.html", context)
+
+
+@login_required(login_url="login")
+@transaction.atomic
+def deleteWord(request, my_word_id):
+
+    myWord = UserWord.objects.filter(id=my_word_id).first()
+    user = request.user
+
+    if not myWord:
+        return HttpResponse("You do not have this word in your lesson.")
+
+    myLesson = myWord.user_lesson
+
+    if user.id != myWord.user_lesson.user.id and user.is_superuser == False:
+        return HttpResponse("You are not allowed here!")
+
+    if not (
+        user == myWord.user_lesson.lesson.author
+        or myWord.user_lesson.lesson.access_type.name in ["write"]
+    ):
+        return HttpResponse("You do not have rights to edit this lesson!")
+
+    if request.method == "POST":
+
+        # Delete word from repository and all related UserWord
+        myWord.word.delete()
+        messages.success(
+            request,
+            f"Word and all your references were deleted from {myLesson.lesson.title}.",
+        )
+
+        # Update the lesson's updated time to reflect changes
+        myLesson.lesson.updated = timezone.now()
+        myLesson.lesson.save()
+        return redirect("my-lesson-details", my_lesson_id=myLesson.id)
+
+    context = {
+        "my_word": myWord,
+    }
+
+    return render(request, "base/delete_word.html", context)
