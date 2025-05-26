@@ -219,6 +219,8 @@ def myLessonDetails(request, my_lesson_id):
 
     myWords = UserWord.objects.filter(user_lesson=myLesson).order_by("-id")
 
+    is_author = myLesson.lesson.author == request.user
+
     is_private = myLesson.lesson.access_type.name == "private"
     if request.user == myLesson.lesson.author or myLesson.lesson.access_type.name in [
         "write"
@@ -254,6 +256,14 @@ def myLessonDetails(request, my_lesson_id):
                 myLesson.lesson.updated = (
                     new_word.updated
                 )  # Update lesson's updated time
+                myLesson.lesson.changes_log = (
+                    (
+                        myLesson.lesson.changes_log + "\n"
+                        if myLesson.lesson.changes_log
+                        else ""
+                    )
+                    + f"{timezone.now()} Word '{new_word.prompt}' added by {request.user.username}"
+                )
                 myLesson.lesson.save()  # Save the lesson to update the timestamp
                 messages.success(request, "Word created successfully!")
                 return redirect("my-lesson-details", my_lesson_id=myLesson.id)
@@ -264,6 +274,7 @@ def myLessonDetails(request, my_lesson_id):
         "word_form": wordForm,
         "can_edit": can_edit,
         "is_private": is_private,
+        "is_author": is_author,
     }
     return render(request, "base/my_lesson_details.html", context)
 
@@ -418,6 +429,10 @@ def importLesson(request, lesson_id):
             UserWord.objects.create(
                 user_lesson=newLesson, word=word, current_progress=0, notes=""
             )
+        lesson.changes_log = (
+            lesson.changes_log + "\n" if lesson.changes_log else ""
+        ) + f"{timezone.now()} Lesson imported by {user.username}"
+        lesson.save()
 
         return redirect("my-lessons", pk=user.id)
     except Exception as e:
@@ -447,6 +462,9 @@ def createLesson(request):
             # Save lesson and associate it with the user
             lesson = lesson_form.save(commit=False)
             lesson.author = request.user
+            lesson.changes_log = (
+                lesson.changes_log + "\n" if lesson.changes_log else ""
+            ) + f"{timezone.now()} Lesson created by {request.user.username}"
             lesson.save()
 
             # Create user's personal reference
@@ -478,6 +496,10 @@ def copyLesson(request, my_lesson_id):
 
     # Create a new lesson based on the existing one
     lesson = myLesson.lesson
+    lesson.changes_log = (
+        lesson.changes_log + "\n" if lesson.changes_log else ""
+    ) + f"{timezone.now()} Lesson copied by {request.user.username}"
+
     new_lesson = Lesson(
         title=lesson.title,
         description=lesson.description,
@@ -486,6 +508,7 @@ def copyLesson(request, my_lesson_id):
         author=request.user,
         access_type=AccessType.objects.get(name="private"),  # Set to private by default
         original_lesson=lesson,  # Link to the original lesson
+        changes_log=lesson.changes_log,
     )
     new_lesson.save()
     # Create a UserLesson for the new lesson
@@ -530,17 +553,61 @@ def editLesson(request, my_lesson_id):
         return HttpResponse("You are not allowed here!")
 
     if not (
-        request.user == myLesson.lesson.author
-        or myLesson.lesson.access_type.name in ["write"]
+        request.user
+        == myLesson.lesson.author
+        # or myLesson.lesson.access_type.name in ["write"]
     ):
         return HttpResponse("You do not have rights to edit this lesson!")
 
-    edit_lesson_form = LessonForm(instance=myLesson.lesson)
+    lesson_instance = myLesson.lesson
+    edit_lesson_form = LessonForm(instance=lesson_instance)
+
+    # Store original values for comparison
+    original_data = {
+        "title": lesson_instance.title,
+        "description": lesson_instance.description,
+        "prompt_language": lesson_instance.prompt_language,
+        "translation_language": lesson_instance.translation_language,
+        "access_type": lesson_instance.access_type,
+    }
 
     if request.method == "POST":
-        edit_lesson_form = LessonForm(request.POST, instance=myLesson.lesson)
+        edit_lesson_form = LessonForm(request.POST, instance=lesson_instance)
         if edit_lesson_form.is_valid():
-            edit_lesson_form.save()
+            updated_lesson = edit_lesson_form.save(commit=False)
+
+            # Compare fields and build a diff string
+            changes = []
+            for field, old_value in original_data.items():
+                new_value = getattr(updated_lesson, field)
+                # For related fields, compare their pk or str
+                if hasattr(old_value, "pk"):
+                    old_val = old_value.pk if old_value else None
+                    new_val = new_value.pk if new_value else None
+                else:
+                    old_val = old_value
+                    new_val = new_value
+                if old_val != new_val:
+                    changes.append(f"{field}: '{old_value}' → '{new_value}'")
+
+            updated_lesson.save()
+
+            # Update the lesson's updated time to reflect changes
+            lesson_instance.updated = updated_lesson.updated
+
+            # Build the change log entry
+            if changes:
+                diff_str = "; ".join(changes)
+                log_entry = f"{timezone.now()} Lesson edited by {request.user.username}: {diff_str}"
+            else:
+                log_entry = f"{timezone.now()} Lesson edited by {request.user.username}: No changes detected"
+
+            lesson_instance.changes_log = (
+                lesson_instance.changes_log + "\n"
+                if lesson_instance.changes_log
+                else ""
+            ) + log_entry
+            lesson_instance.save()
             messages.success(request, "Lesson updated successfully!")
             return redirect("my-lesson-details", my_lesson_id=myLesson.id)
 
@@ -581,6 +648,14 @@ def editWord(request, my_word_id):
 
             # Update the lesson's updated time to reflect changes
             myWord.user_lesson.lesson.updated = edit_word_form.instance.updated
+            myWord.user_lesson.lesson.changes_log = (
+                (
+                    myWord.user_lesson.lesson.changes_log + "\n"
+                    if myWord.user_lesson.lesson.changes_log
+                    else ""
+                )
+                + f"{timezone.now()} Word '{myWord.word.prompt}' edited by {request.user.username}"
+            )
             myWord.user_lesson.lesson.save()
 
             messages.success(request, "Lesson updated successfully!")
@@ -604,6 +679,7 @@ def deleteWord(request, my_word_id):
         return HttpResponse("You do not have this word in your lesson.")
 
     myLesson = myWord.user_lesson
+    wordNameToDelete = myWord.word.prompt
 
     if user.id != myWord.user_lesson.user.id and user.is_superuser == False:
         return HttpResponse("You are not allowed here!")
@@ -625,6 +701,9 @@ def deleteWord(request, my_word_id):
 
         # Update the lesson's updated time to reflect changes
         myLesson.lesson.updated = timezone.now()
+        myLesson.lesson.changes_log = (
+            myLesson.lesson.changes_log + "\n" if myLesson.lesson.changes_log else ""
+        ) + f"{timezone.now()} Word '{wordNameToDelete}' deleted by {user.username}"
         myLesson.lesson.save()
         return redirect("my-lesson-details", my_lesson_id=myLesson.id)
 

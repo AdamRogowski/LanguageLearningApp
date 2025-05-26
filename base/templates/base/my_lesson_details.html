@@ -20,7 +20,7 @@
 </form>
 
 <form action="{% url 'edit-lesson' my_lesson.id %}" method="get" style="display:inline;">
-    <button type="submit"  {% if not can_edit %}disabled{% endif %}>Edit lesson</button>
+    <button type="submit"  {% if not is_author %}disabled{% endif %}>Edit lesson</button>
 </form>
  
 

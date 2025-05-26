@@ -96,9 +96,9 @@ class Lesson(models.Model):
     #    blank=True,
     # )
 
-    # changes_log = models.TextField(
-    #    blank=True, help_text="Log of changes made to this lesson."
-    # )
+    changes_log = models.TextField(
+        blank=True, help_text="Log of changes made to this lesson."
+    )
 
     access_type = models.ForeignKey(AccessType, on_delete=models.PROTECT, default=1)
 
