@@ -94,6 +94,9 @@ class UserLesson(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     target_progress = models.IntegerField(default=3)
+    lesson_directory = models.CharField(
+        max_length=255, blank=True, help_text="Directory where the lesson is stored."
+    )
 
     class Meta:
         unique_together = ("user", "lesson")
