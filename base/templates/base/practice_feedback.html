@@ -1,14 +1,26 @@
 {% extends "main.html" %}
 {% block content %}
-<h2>Practice Mode</h2>
-<p>Translate: {{ user_word.word.translation }}</p>
-<form method="post">
-    {% csrf_token %}
-    <input type="text" name="answer" autocomplete="off" autofocus>
-    <button type="submit">Submit</button>
-</form>
+<h2>Practice Feedback</h2>
+{% if correct %}
+    <div style="color: green;"><strong>Correct!</strong></div>
+    <form method="post" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" autofocus>Continue</button>
+    </form>
+{% else %}
+    <div style="color: red;">
+        <strong>Incorrect!</strong><br>
+        Your answer: <code>{{ answer }}</code><br>
+        Correct answer: <code>{{ correct_answer }}</code><br>
+        <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" name="accept_as_correct" value="1">Accept my answer as correct</button>
+            <button type="submit" autofocus>Continue</button>
+        </form>
+    </div>
+{% endif %}
+<!-- Rollout for hint and notes as before -->
 
-<!-- Rollout for hint and notes -->
 <div>
     <button type="button" onclick="toggleRollout('hint')">Show/Hide Hint</button>
     <div id="hint" style="display:none; margin-bottom:1em;">

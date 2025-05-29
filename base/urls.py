@@ -60,4 +60,9 @@ urlpatterns = [
         views.cancel_practice,
         name="cancel-practice",
     ),
+    path(
+        "practice_feedback/<int:user_lesson_id>/",
+        views.practice_feedback,
+        name="practice-feedback",
+    ),
 ]

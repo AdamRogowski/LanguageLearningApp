@@ -116,6 +116,16 @@ def myLessonDetails(request, my_lesson_id):
     # ----------------------------------------------------------------------
 
     myWords = UserWord.objects.filter(user_lesson=myLesson).order_by("-id")
+    my_Words_search_query = request.GET.get("q") or ""
+
+    if my_Words_search_query:
+        myWords = myWords.filter(
+            Q(word__prompt__icontains=my_Words_search_query)
+            | Q(word__translation__icontains=my_Words_search_query)
+            | Q(word__usage__icontains=my_Words_search_query)
+            | Q(word__hint__icontains=my_Words_search_query)
+            | Q(notes__icontains=my_Words_search_query)
+        ).order_by("id")
 
     is_author = myLesson.lesson.author == request.user
 
@@ -772,23 +782,16 @@ def start_practice(request, user_lesson_id):
 def practice(request, user_lesson_id):
     window_key = f"practice_{user_lesson_id}_window"
     pool_key = f"practice_{user_lesson_id}_pool"
+    answer_key = f"practice_{user_lesson_id}_answer"
     window = request.session.get(window_key, [])
     pool = request.session.get(pool_key, [])
 
-    # If session data is missing, redirect to start practice
-    if window is None or pool is None:
-        messages.info(
-            request, "No active practice session. Please start a new session."
-        )
-        return redirect("start-practice", user_lesson_id=user_lesson_id)
-
     if not window:
         # Session complete
-        # Optionally, clear session keys
         request.session.pop(window_key, None)
         request.session.pop(pool_key, None)
+        request.session.pop(answer_key, None)
         messages.info(request, "Practice session completed!")
-        # Redirect to lesson details or wherever appropriate
         return redirect("my-lesson-details", my_lesson_id=user_lesson_id)
 
     user_word = get_object_or_404(
@@ -800,32 +803,69 @@ def practice(request, user_lesson_id):
 
     if request.method == "POST":
         answer = request.POST.get("answer", "").strip()
-        correct = answer == user_word.word.prompt
-        if correct:
+        correct = answer.lower() == user_word.word.prompt.lower()
+        # Store answer and correctness in session
+        request.session[answer_key] = {
+            "user_word_id": user_word.id,
+            "answer": answer,
+            "correct": correct,
+            "correct_answer": user_word.word.prompt,
+        }
+        return redirect("practice-feedback", user_lesson_id=user_lesson_id)
+
+    return render(
+        request,
+        "base/practice.html",
+        {"user_word": user_word, "user_lesson_id": user_lesson_id},
+    )
+
+
+@login_required
+def practice_feedback(request, user_lesson_id):
+    window_key = f"practice_{user_lesson_id}_window"
+    pool_key = f"practice_{user_lesson_id}_pool"
+    answer_key = f"practice_{user_lesson_id}_answer"
+    window = request.session.get(window_key, [])
+    pool = request.session.get(pool_key, [])
+    answer_data = request.session.get(answer_key)
+
+    if not answer_data or not window:
+        return redirect("practice", user_lesson_id=user_lesson_id)
+
+    user_word = get_object_or_404(
+        UserWord,
+        id=answer_data["user_word_id"],
+        user_lesson__user=request.user,
+        user_lesson_id=user_lesson_id,
+    )
+
+    if request.method == "POST":
+        # Accept as correct or continue
+        if answer_data["correct"] or "accept_as_correct" in request.POST:
             user_word.current_progress += 1
             user_word.save()
-            # Remove from window
             window.pop(0)
-            # Add next from pool if available
             if pool:
                 window.append(pool.pop(0))
         else:
             user_word.current_progress = max(0, user_word.current_progress - 1)
             user_word.save()
-            # Move to end of window
             word_id = window.pop(0)
             window.append(word_id)
-        # Save session state
+        # Save updated session state
         request.session[window_key] = window
         request.session[pool_key] = pool
+        request.session.pop(answer_key, None)
         return redirect("practice", user_lesson_id=user_lesson_id)
 
     context = {
         "user_word": user_word,
         "user_lesson_id": user_lesson_id,
+        "answer": answer_data["answer"],
+        "correct": answer_data["correct"],
+        "correct_answer": answer_data["correct_answer"],
     }
-
-    return render(request, "base/practice.html", context)
+    return render(request, "base/practice_feedback.html", context)
 
 
 @login_required

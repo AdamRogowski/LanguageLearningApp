@@ -15,6 +15,13 @@
 
 <h5>Target progress: {{ my_lesson.target_progress }}</h5>
 
+<br>
+
+<form method="GET" action="{% url 'my-lesson-details' my_lesson.id %}">
+    <input type="text" name="q" placeholder="Search word...">
+    <button type="submit">Search</button>
+</form>
+
 <form action="{% url 'delete-my-lesson' my_lesson.id %}" method="get" style="display:inline;">
     <button type="submit">Delete lesson</button>
 </form>
