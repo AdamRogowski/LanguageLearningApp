@@ -65,4 +65,7 @@ urlpatterns = [
         views.practice_feedback,
         name="practice-feedback",
     ),
+    path(
+        "reset_progress/<int:my_lesson_id>/", views.resetProgress, name="reset-progress"
+    ),
 ]

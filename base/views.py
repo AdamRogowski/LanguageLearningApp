@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
 from django.db.models import Q  # Import Q for complex queries
 from django.db.models import Avg  # Import Avg for aggregation
@@ -645,6 +646,25 @@ def editLesson(request, my_lesson_id):
         "my_lesson": myLesson,
     }
     return render(request, "base/edit_lesson.html", context)
+
+
+@login_required(login_url="login")
+@require_http_methods(["GET", "POST"])
+def resetProgress(request, my_lesson_id):
+    myLesson = get_object_or_404(UserLesson, id=my_lesson_id, user=request.user)
+
+    if request.method == "POST":
+        # Reset progress for all UserWords in this UserLesson
+        UserWord.objects.filter(user_lesson=myLesson).update(current_progress=0)
+        messages.success(
+            request, "Progress for all words in this lesson has been reset to 0."
+        )
+        return redirect("my-lesson-details", my_lesson_id=my_lesson_id)
+
+    context = {
+        "my_lesson": myLesson,
+    }
+    return render(request, "base/reset_progress.html", context)
 
 
 @login_required(login_url="login")

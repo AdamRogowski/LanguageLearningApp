@@ -5,6 +5,8 @@
 <h1><a href="{% url 'my-lessons' my_lesson.user.id %}">{{my_lesson.user.username}}'s lessons</a></h1>
 <h2><a href="{% url 'my-lesson-details' my_lesson.id %}">{{ my_lesson.lesson.title }}</a></h2>
 
+<a href="{% url 'reset-progress' my_lesson.id %}"><button>Reset Progress</button></a>
+
 <form method="POST" action="">
     {% csrf_token %}
     {{ edit_user_lesson_form.as_p }}
