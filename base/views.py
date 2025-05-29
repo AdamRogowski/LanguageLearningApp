@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
 from .models import Lesson, Word, UserLesson, UserWord, AccessType, Rating, Language
-from .forms import WordForm, RateLessonForm, UserLessonForm
+from .forms import RateLessonForm, UserLessonForm, UserWordForm
 from django.utils import timezone
 from random import shuffle
 
@@ -127,30 +127,59 @@ def myLessonDetails(request, my_lesson_id):
     else:
         can_edit = False
 
-    wordForm = WordForm()
+    userWordForm = UserWordForm()
 
     if can_edit:
 
         if request.method == "POST":
-            wordForm = WordForm(request.POST)
-            if wordForm.is_valid():
-                new_word = wordForm.save(commit=False)
+            userWordForm = UserWordForm(request.POST)
+            if userWordForm.is_valid():
+                # Extract word data from the form
+                word_data = userWordForm.cleaned_data.get("word")
+                prompt = (
+                    word_data.prompt
+                    if word_data
+                    else userWordForm.cleaned_data.get("prompt")
+                )
+                translation = (
+                    word_data.translation
+                    if word_data
+                    else userWordForm.cleaned_data.get("translation")
+                )
+                usage = (
+                    word_data.usage
+                    if word_data
+                    else userWordForm.cleaned_data.get("usage")
+                )
+                hint = (
+                    word_data.hint
+                    if word_data
+                    else userWordForm.cleaned_data.get("hint")
+                )
+
                 # Check if the word already exists in the lesson
-                if Word.objects.filter(
-                    prompt=new_word.prompt, lesson=myLesson.lesson
-                ).exists():
+                if Word.objects.filter(prompt=prompt, lesson=myLesson.lesson).exists():
                     messages.error(request, "This word already exists in the lesson.")
                     return redirect("my-lesson-details", my_lesson_id=myLesson.id)
 
-                new_word.lesson = myLesson.lesson  # Associate with the lesson
+                # Create the Word instance and associate with the lesson
+                new_word = Word(
+                    prompt=prompt,
+                    translation=translation,
+                    usage=usage,
+                    hint=hint,
+                    lesson=myLesson.lesson,
+                )
                 new_word.save()
-                # Create a UserWord instance for the user lesson
-                user_word = UserWord()
-                user_word.word = new_word  # Associate the word
-                user_word.current_progress = 0  # Default progress
-                user_word.notes = ""  # Default notes
-                user_word.user_lesson = myLesson  # Associate with the user lesson
-                user_word.save()
+
+                # Now create the UserWord instance with the new Word
+                UserWord.objects.create(
+                    user_lesson=myLesson,
+                    word=new_word,
+                    current_progress=0,
+                    notes=userWordForm.cleaned_data.get("notes", ""),
+                )
+
                 myLesson.lesson.updated = (
                     new_word.updated
                 )  # Update lesson's updated time
@@ -169,7 +198,7 @@ def myLessonDetails(request, my_lesson_id):
     context = {
         "my_lesson": myLesson,
         "my_words": myWords,
-        "word_form": wordForm,
+        "word_form": userWordForm,
         "can_edit": can_edit,
         "is_private": is_private,
         "is_author": is_author,
@@ -611,7 +640,6 @@ def editLesson(request, my_lesson_id):
 @login_required(login_url="login")
 @transaction.atomic
 def editWord(request, my_word_id):
-
     myWord = UserWord.objects.filter(id=my_word_id).first()
 
     if not myWord:
@@ -629,15 +657,24 @@ def editWord(request, my_word_id):
     ):
         return HttpResponse("You do not have rights to edit this lesson!")
 
-    edit_word_form = WordForm(instance=myWord.word)
-
+    # Use UserWordForm, passing the UserWord instance and the related Word instance for initial values
     if request.method == "POST":
-        edit_word_form = WordForm(request.POST, instance=myWord.word)
+        edit_word_form = UserWordForm(
+            request.POST, instance=myWord, word_instance=myWord.word
+        )
         if edit_word_form.is_valid():
-            edit_word_form.save()
+            # Update Word fields
+            myWord.word.prompt = edit_word_form.cleaned_data["prompt"]
+            myWord.word.translation = edit_word_form.cleaned_data["translation"]
+            myWord.word.usage = edit_word_form.cleaned_data["usage"]
+            myWord.word.hint = edit_word_form.cleaned_data["hint"]
+            myWord.word.save()
+            # Update UserWord notes
+            myWord.notes = edit_word_form.cleaned_data["notes"]
+            myWord.save()
 
             # Update the lesson's updated time to reflect changes
-            myWord.user_lesson.lesson.updated = edit_word_form.instance.updated
+            myWord.user_lesson.lesson.updated = timezone.now()
             myWord.user_lesson.lesson.changes_log = (
                 (
                     myWord.user_lesson.lesson.changes_log + "\n"
@@ -650,6 +687,8 @@ def editWord(request, my_word_id):
 
             messages.success(request, "Lesson updated successfully!")
             return redirect("my-lesson-details", my_lesson_id=myWord.user_lesson.id)
+    else:
+        edit_word_form = UserWordForm(instance=myWord, word_instance=myWord.word)
 
     context = {
         "edit_word_form": edit_word_form,

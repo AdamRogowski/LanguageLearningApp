@@ -36,7 +36,9 @@ class Lesson(models.Model):
     """
 
     title = models.CharField(max_length=255)
-    description = models.TextField()
+    description = models.TextField(
+        blank=True, help_text="Brief description of the lesson."
+    )
     prompt_language = models.ForeignKey(
         Language, on_delete=models.CASCADE, related_name="prompt_lessons"
     )
