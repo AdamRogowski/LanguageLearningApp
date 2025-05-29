@@ -14,6 +14,7 @@ class UserLessonForm(forms.ModelForm):
             "access_type",
             "target_progress",
             "practice_window",
+            "allowed_error_margin",
         ]
         widgets = {
             "title": forms.TextInput(attrs={"autofocus": "autofocus"}),
@@ -37,6 +38,7 @@ class UserLessonForm(forms.ModelForm):
     )
     target_progress = forms.IntegerField(min_value=1, required=True)
     practice_window = forms.IntegerField(min_value=1, required=True)
+    allowed_error_margin = forms.IntegerField(min_value=0, required=True)
 
     def __init__(self, *args, lesson_instance=None, **kwargs):
         super().__init__(*args, **kwargs)

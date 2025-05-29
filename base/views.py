@@ -15,6 +15,8 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from random import shuffle
 import json
+from Levenshtein import distance
+import difflib
 
 
 def loginPage(request):
@@ -827,13 +829,20 @@ def practice(request, user_lesson_id):
 
     if request.method == "POST":
         answer = request.POST.get("answer", "").strip()
-        correct = answer == user_word.word.prompt
-        # Store answer and correctness in session
+        correct_answer = user_word.word.prompt.strip()
+        lev_distance = distance(answer.lower(), correct_answer.lower())
+        # How many errors are allowed
+        correct = lev_distance < user_word.user_lesson.allowed_error_margin + 1
+        diff_html = (
+            highlight_differences(answer, correct_answer) if lev_distance != 0 else ""
+        )
         request.session[answer_key] = {
             "user_word_id": user_word.id,
             "answer": answer,
             "correct": correct,
-            "correct_answer": user_word.word.prompt,
+            "correct_answer": correct_answer,
+            "diff_html": diff_html,
+            "lev_distance": lev_distance,
         }
         return redirect("practice-feedback", user_lesson_id=user_lesson_id)
 
@@ -887,8 +896,11 @@ def practice_feedback(request, user_lesson_id):
         "user_lesson_id": user_lesson_id,
         "answer": answer_data["answer"],
         "correct": answer_data["correct"],
-        "correct_answer": answer_data["correct_answer"],
+        # "correct_answer": answer_data["correct_answer"],
+        "diff_html": answer_data.get("diff_html", ""),
+        "lev_distance": answer_data.get("lev_distance", ""),
     }
+
     return render(request, "base/practice_feedback.html", context)
 
 
@@ -900,6 +912,21 @@ def cancel_practice(request, user_lesson_id):
     request.session.pop(pool_key, None)
     messages.info(request, "Practice session cancelled.")
     return redirect("my-lesson-details", my_lesson_id=user_lesson_id)
+
+
+def highlight_differences(user_answer, correct_answer):
+    """
+    Returns HTML with mismatches highlighted.
+    """
+    matcher = difflib.SequenceMatcher(None, user_answer, correct_answer)
+    result = []
+    for opcode, a0, a1, b0, b1 in matcher.get_opcodes():
+        if opcode == "equal":
+            result.append(correct_answer[b0:b1])
+        else:
+            # Highlight mismatched parts from the correct answer
+            result.append(f'<span class="diff">{correct_answer[b0:b1]}</span>')
+    return "".join(result)
 
 
 # ------------Import Lesson from JSON------------#

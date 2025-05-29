@@ -102,6 +102,9 @@ class UserLesson(models.Model):
     practice_window = models.PositiveIntegerField(
         default=10, validators=[MinValueValidator(1)]
     )
+    allowed_error_margin = models.PositiveIntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
 
     class Meta:
         unique_together = ("user", "lesson")
