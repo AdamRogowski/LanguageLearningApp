@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.db.models import Q  # Import Q for complex queries
 from django.db.models import Avg  # Import Avg for aggregation
@@ -705,3 +705,95 @@ def deleteWord(request, my_word_id):
 
 
 # ------------Practice Views------------#
+
+
+@login_required
+def start_practice(request, user_lesson_id):
+    window_key = f"practice_{user_lesson_id}_window"
+    pool_key = f"practice_{user_lesson_id}_pool"
+    # Ensure only one session per user per lesson by clearing any existing session data
+    request.session.pop(window_key, None)
+    request.session.pop(pool_key, None)
+
+    user_lesson = get_object_or_404(UserLesson, id=user_lesson_id, user=request.user)
+    user_words = list(
+        UserWord.objects.filter(
+            user_lesson=user_lesson, current_progress__lt=user_lesson.target_progress
+        ).values_list("id", flat=True)
+    )
+    shuffle(user_words)
+    window = user_words[: user_lesson.practice_window]
+    pool = user_words[user_lesson.practice_window :]
+    request.session[window_key] = window
+    request.session[pool_key] = pool
+    return redirect("practice", user_lesson_id=user_lesson_id)
+
+
+@login_required
+def practice(request, user_lesson_id):
+    window_key = f"practice_{user_lesson_id}_window"
+    pool_key = f"practice_{user_lesson_id}_pool"
+    window = request.session.get(window_key, [])
+    pool = request.session.get(pool_key, [])
+
+    # If session data is missing, redirect to start practice
+    if window is None or pool is None:
+        messages.info(
+            request, "No active practice session. Please start a new session."
+        )
+        return redirect("start-practice", user_lesson_id=user_lesson_id)
+
+    if not window:
+        # Session complete
+        # Optionally, clear session keys
+        request.session.pop(window_key, None)
+        request.session.pop(pool_key, None)
+        messages.info(request, "Practice session completed!")
+        # Redirect to lesson details or wherever appropriate
+        return redirect("my-lesson-details", my_lesson_id=user_lesson_id)
+
+    user_word = get_object_or_404(
+        UserWord,
+        id=window[0],
+        user_lesson__user=request.user,
+        user_lesson_id=user_lesson_id,
+    )
+
+    if request.method == "POST":
+        answer = request.POST.get("answer", "").strip()
+        correct = answer == user_word.word.prompt
+        if correct:
+            user_word.current_progress += 1
+            user_word.save()
+            # Remove from window
+            window.pop(0)
+            # Add next from pool if available
+            if pool:
+                window.append(pool.pop(0))
+        else:
+            user_word.current_progress = max(0, user_word.current_progress - 1)
+            user_word.save()
+            # Move to end of window
+            word_id = window.pop(0)
+            window.append(word_id)
+        # Save session state
+        request.session[window_key] = window
+        request.session[pool_key] = pool
+        return redirect("practice", user_lesson_id=user_lesson_id)
+
+    context = {
+        "user_word": user_word,
+        "user_lesson_id": user_lesson_id,
+    }
+
+    return render(request, "base/practice.html", context)
+
+
+@login_required
+def cancel_practice(request, user_lesson_id):
+    window_key = f"practice_{user_lesson_id}_window"
+    pool_key = f"practice_{user_lesson_id}_pool"
+    request.session.pop(window_key, None)
+    request.session.pop(pool_key, None)
+    messages.info(request, "Practice session cancelled.")
+    return redirect("my-lesson-details", my_lesson_id=user_lesson_id)

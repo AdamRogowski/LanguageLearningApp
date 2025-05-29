@@ -49,4 +49,15 @@ urlpatterns = [
     path("edit_lesson/<int:my_lesson_id>/", views.editLesson, name="edit-lesson"),
     path("edit_word/<int:my_word_id>/", views.editWord, name="edit-word"),
     path("delete_word/<int:my_word_id>/", views.deleteWord, name="delete-word"),
+    path(
+        "start_practice/<int:user_lesson_id>/",
+        views.start_practice,
+        name="start-practice",
+    ),
+    path("practice/<int:user_lesson_id>/", views.practice, name="practice"),
+    path(
+        "cancel_practice/<int:user_lesson_id>/",
+        views.cancel_practice,
+        name="cancel-practice",
+    ),
 ]

@@ -1,0 +1,18 @@
+{% extends "main.html" %}
+
+{% block content %}
+
+<h2>Practice Mode</h2>
+<p>Translate: {{ user_word.word.translation }}</p>
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="answer" autocomplete="off" autofocus>
+    <button type="submit">Submit</button>
+</form>
+
+<form method="post" action="{% url 'cancel-practice' user_lesson_id=user_lesson_id %}">
+    {% csrf_token %}
+    <button type="submit">Cancel Practice</button>
+</form>
+
+{% endblock content %}
