@@ -12,7 +12,9 @@ from django.contrib.auth.forms import UserCreationForm
 from .models import Lesson, Word, UserLesson, UserWord, AccessType, Rating, Language
 from .forms import RateLessonForm, UserLessonForm, UserWordForm
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from random import shuffle
+import json
 
 
 def loginPage(request):
@@ -54,7 +56,7 @@ def registerPage(request):
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.username = user.username.lower()
+            user.username = user.username
             user.save()
             login(request, user)
             return redirect("home")
@@ -780,9 +782,11 @@ def deleteWord(request, my_word_id):
 def start_practice(request, user_lesson_id):
     window_key = f"practice_{user_lesson_id}_window"
     pool_key = f"practice_{user_lesson_id}_pool"
+    answer_key = f"practice_{user_lesson_id}_answer"
     # Ensure only one session per user per lesson by clearing any existing session data
     request.session.pop(window_key, None)
     request.session.pop(pool_key, None)
+    request.session.pop(answer_key, None)
 
     user_lesson = get_object_or_404(UserLesson, id=user_lesson_id, user=request.user)
     user_words = list(
@@ -823,7 +827,7 @@ def practice(request, user_lesson_id):
 
     if request.method == "POST":
         answer = request.POST.get("answer", "").strip()
-        correct = answer.lower() == user_word.word.prompt.lower()
+        correct = answer == user_word.word.prompt
         # Store answer and correctness in session
         request.session[answer_key] = {
             "user_word_id": user_word.id,
@@ -896,3 +900,92 @@ def cancel_practice(request, user_lesson_id):
     request.session.pop(pool_key, None)
     messages.info(request, "Practice session cancelled.")
     return redirect("my-lesson-details", my_lesson_id=user_lesson_id)
+
+
+# ------------Import Lesson from JSON------------#
+
+
+from django.core.exceptions import ValidationError
+
+
+@login_required(login_url="login")
+@require_http_methods(["GET", "POST"])
+def import_lesson_json(request):
+    if request.method == "POST":
+        file = request.FILES.get("json_file")
+        if not file:
+            messages.error(request, "No file uploaded.")
+            return redirect("import-lesson-json")
+
+        # Security: Only allow .json files and limit size (e.g., 1MB)
+        if not file.name.endswith(".json") or file.size > 1024 * 1024:
+            messages.error(request, "Invalid file type or file too large.")
+            return redirect("import-lesson-json")
+
+        try:
+            data = json.load(file)
+        except Exception as e:
+            messages.error(request, f"Invalid JSON: {e}")
+            return redirect("import-lesson-json")
+
+        # Validate required fields
+        required_fields = ["title", "prompt_language", "translation_language", "words"]
+        if not all(field in data for field in required_fields):
+            messages.error(request, "Missing required fields in JSON.")
+            return redirect("import-lesson-json")
+
+        # Get or create languages
+        prompt_lang, _ = Language.objects.get_or_create(name=data["prompt_language"])
+        translation_lang, _ = Language.objects.get_or_create(
+            name=data["translation_language"]
+        )
+
+        # AccessType: Only use existing, fallback to 'private'
+        access_type_name = data.get("access_type", "private")
+        try:
+            access_type = AccessType.objects.get(name=access_type_name)
+        except AccessType.DoesNotExist:
+            access_type = AccessType.objects.get(name="private")
+
+        # Create the lesson
+        lesson = Lesson.objects.create(
+            title=data["title"],
+            description=data.get("description", ""),
+            prompt_language=prompt_lang,
+            translation_language=translation_lang,
+            author=request.user,
+            access_type=access_type,
+        )
+
+        # Create words
+        for word in data.get("words", []):
+            # Validate word fields
+            if not all(k in word for k in ("prompt", "translation")):
+                continue  # skip incomplete word entries
+            Word.objects.create(
+                lesson=lesson,
+                prompt=word["prompt"],
+                translation=word["translation"],
+                usage=word.get("usage", ""),
+                hint=word.get("hint", ""),
+            )
+
+        # Create UserLesson for the importing user
+        user_lesson = UserLesson.objects.create(user=request.user, lesson=lesson)
+
+        # Create UserWord for each word
+        for word in lesson.words.all():
+            UserWord.objects.create(
+                user_lesson=user_lesson, word=word, current_progress=0, notes=""
+            )
+
+        lesson.changes_log = (
+            ((lesson.changes_log + "\n") if lesson.changes_log else "")
+            + f"{timezone.now()} Lesson imported by {request.user.username} from file '{file.name}'"
+        )
+        lesson.save()
+
+        messages.success(request, "Lesson imported successfully!")
+        return redirect("my-lesson-details", my_lesson_id=user_lesson.id)
+
+    return render(request, "base/import_lesson_json.html")

@@ -1,0 +1,9 @@
+{% extends "main.html" %}
+{% block content %}
+<h2>Import Lesson from JSON</h2>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="file" name="json_file" accept=".json" required>
+    <button type="submit">Import</button>
+</form>
+{% endblock content %}

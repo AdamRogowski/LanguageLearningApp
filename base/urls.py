@@ -68,4 +68,5 @@ urlpatterns = [
     path(
         "reset_progress/<int:my_lesson_id>/", views.resetProgress, name="reset-progress"
     ),
+    path("import-lesson-json/", views.import_lesson_json, name="import-lesson-json"),
 ]
