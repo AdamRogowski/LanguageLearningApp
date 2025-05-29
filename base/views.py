@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
 from .models import Lesson, Word, UserLesson, UserWord, AccessType, Rating, Language
-from .forms import LessonForm, WordForm, RateLessonForm, UserLessonForm
+from .forms import WordForm, RateLessonForm, UserLessonForm
 from django.utils import timezone
 from random import shuffle
 
@@ -403,26 +403,37 @@ def importLesson(request, lesson_id):
 def createLesson(request):
 
     if request.method == "POST":
-        lesson_form = LessonForm(request.POST)
+        user_lesson_form = UserLessonForm(request.POST)
 
-        if lesson_form.is_valid():
-            # Save lesson and associate it with the user
-            lesson = lesson_form.save(commit=False)
-            lesson.author = request.user
+        if user_lesson_form.is_valid():
+            # First, create and save the Lesson instance from form data
+            lesson = Lesson(
+                title=user_lesson_form.cleaned_data["title"],
+                description=user_lesson_form.cleaned_data["description"],
+                prompt_language=user_lesson_form.cleaned_data["prompt_language"],
+                translation_language=user_lesson_form.cleaned_data[
+                    "translation_language"
+                ],
+                access_type=user_lesson_form.cleaned_data["access_type"],
+                author=request.user,
+            )
             lesson.changes_log = (
                 lesson.changes_log + "\n" if lesson.changes_log else ""
             ) + f"{timezone.now()} Lesson created by {request.user.username}"
             lesson.save()
 
-            # Create user's personal reference
-            myLesson = UserLesson.objects.create(user=request.user, lesson=lesson)
+            # Now create the UserLesson and assign the lesson
+            myLesson = user_lesson_form.save(commit=False)
+            myLesson.lesson = lesson
+            myLesson.user = request.user
+            myLesson.save()
 
             messages.success(request, "Lesson created successfully!")
             return redirect("my-lesson-details", my_lesson_id=myLesson.id)
     else:
-        lesson_form = LessonForm()
+        user_lesson_form = UserLessonForm()
 
-    context = {"lesson_form": lesson_form}
+    context = {"lesson_form": user_lesson_form}
     return render(request, "base/create_lesson.html", context)
 
 
@@ -490,7 +501,6 @@ def copyLesson(request, my_lesson_id):
 @login_required(login_url="login")
 @transaction.atomic
 def editLesson(request, my_lesson_id):
-
     myLesson = UserLesson.objects.filter(id=my_lesson_id).first()
 
     if not myLesson:
@@ -507,8 +517,11 @@ def editLesson(request, my_lesson_id):
         return HttpResponse("You do not have rights to edit this lesson!")
 
     lesson_instance = myLesson.lesson
-    edit_lesson_form = LessonForm(instance=lesson_instance)
-    edit_user_lesson_form = UserLessonForm(instance=myLesson)
+
+    # Use UserLessonForm, passing lesson_instance for initial lesson fields
+    edit_user_lesson_form = UserLessonForm(
+        instance=myLesson, lesson_instance=lesson_instance
+    )
 
     # Store original values for comparison
     original_data = {
@@ -522,14 +535,40 @@ def editLesson(request, my_lesson_id):
     }
 
     if request.method == "POST":
-        edit_lesson_form = LessonForm(request.POST, instance=lesson_instance)
-        if edit_lesson_form.is_valid():
-            updated_lesson = edit_lesson_form.save(commit=False)
+        edit_user_lesson_form = UserLessonForm(
+            request.POST, instance=myLesson, lesson_instance=lesson_instance
+        )
+        if edit_user_lesson_form.is_valid():
+            # Update UserLesson fields
+            myLesson = edit_user_lesson_form.save(commit=False)
+            # Update related Lesson fields from form data
+            lesson_instance.title = edit_user_lesson_form.cleaned_data["title"]
+            lesson_instance.description = edit_user_lesson_form.cleaned_data[
+                "description"
+            ]
+            lesson_instance.prompt_language = edit_user_lesson_form.cleaned_data[
+                "prompt_language"
+            ]
+            lesson_instance.translation_language = edit_user_lesson_form.cleaned_data[
+                "translation_language"
+            ]
+            lesson_instance.access_type = edit_user_lesson_form.cleaned_data[
+                "access_type"
+            ]
 
             # Compare fields and build a diff string
             changes = []
             for field, old_value in original_data.items():
-                new_value = getattr(updated_lesson, field)
+                if field in [
+                    "title",
+                    "description",
+                    "prompt_language",
+                    "translation_language",
+                    "access_type",
+                ]:
+                    new_value = getattr(lesson_instance, field)
+                else:
+                    new_value = getattr(myLesson, field)
                 # For related fields, compare their pk or str
                 if hasattr(old_value, "pk"):
                     old_val = old_value.pk if old_value else None
@@ -540,10 +579,11 @@ def editLesson(request, my_lesson_id):
                 if old_val != new_val:
                     changes.append(f"{field}: '{old_value}' → '{new_value}'")
 
-            updated_lesson.save()
+            # lesson_instance.save()
+            myLesson.save()
 
             # Update the lesson's updated time to reflect changes
-            lesson_instance.updated = updated_lesson.updated
+            lesson_instance.updated = timezone.now()
 
             # Build the change log entry
             if changes:
@@ -562,7 +602,7 @@ def editLesson(request, my_lesson_id):
             return redirect("my-lesson-details", my_lesson_id=myLesson.id)
 
     context = {
-        "edit_lesson_form": edit_lesson_form,
+        "edit_user_lesson_form": edit_user_lesson_form,
         "my_lesson": myLesson,
     }
     return render(request, "base/edit_lesson.html", context)

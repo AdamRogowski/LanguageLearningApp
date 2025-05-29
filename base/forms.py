@@ -1,21 +1,6 @@
 from django.forms import ModelForm
-from .models import Lesson, Word, UserLesson
+from .models import Lesson, Word, UserLesson, Language, AccessType
 from django import forms
-
-
-class LessonForm(ModelForm):
-    class Meta:
-        model = Lesson
-        fields = [
-            "title",
-            "description",
-            "prompt_language",
-            "translation_language",
-            "access_type",
-        ]
-        widgets = {
-            "title": forms.TextInput(attrs={"autofocus": "autofocus"}),
-        }
 
 
 class UserLessonForm(forms.ModelForm):
@@ -32,16 +17,18 @@ class UserLessonForm(forms.ModelForm):
         ]
         widgets = {
             "title": forms.TextInput(attrs={"autofocus": "autofocus"}),
+            "target_progress": forms.NumberInput(attrs={"min": 1}),
+            "practice_window": forms.NumberInput(attrs={"min": 1}),
         }
 
     # Override fields from Lesson as unbound fields
     title = forms.CharField()
     description = forms.CharField(widget=forms.Textarea)
-    prompt_language = forms.CharField()
-    translation_language = forms.CharField()
-    access_type = forms.ChoiceField(
-        choices=Lesson._meta.get_field("access_type").choices
-    )
+    prompt_language = forms.ModelChoiceField(queryset=Language.objects.all())
+    translation_language = forms.ModelChoiceField(queryset=Language.objects.all())
+    access_type = forms.ModelChoiceField(queryset=AccessType.objects.all())
+    target_progress = forms.IntegerField(min_value=1)
+    practice_window = forms.IntegerField(min_value=1)
 
     def __init__(self, *args, lesson_instance=None, **kwargs):
         super().__init__(*args, **kwargs)

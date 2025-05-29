@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator
 
 # Language learning app models
 
@@ -93,8 +94,12 @@ class UserLesson(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
-    target_progress = models.IntegerField(default=3)
-    practice_window = models.PositiveIntegerField(default=10)
+    target_progress = models.PositiveIntegerField(
+        default=3, validators=[MinValueValidator(1)]
+    )
+    practice_window = models.PositiveIntegerField(
+        default=10, validators=[MinValueValidator(1)]
+    )
 
     class Meta:
         unique_together = ("user", "lesson")
