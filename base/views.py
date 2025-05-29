@@ -2,14 +2,16 @@ from django.db import transaction
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.db.models import Q  # Import Q for complex queries
+from django.db.models import Avg  # Import Avg for aggregation
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
-from .models import Lesson, Word, UserLesson, UserWord, AccessType
-from .forms import LessonForm, WordForm
+from .models import Lesson, Word, UserLesson, UserWord, AccessType, Rating, Language
+from .forms import LessonForm, WordForm, RateLessonForm, UserLessonForm
 from django.utils import timezone
+from random import shuffle
 
 
 def loginPage(request):
@@ -277,14 +279,75 @@ def lessonDetails(request, lesson_id):
     if lesson.access_type.name == "private":
         return HttpResponse("This lesson is private and cannot be imported.")
 
+    lessonRatings = Rating.objects.filter(lesson=lesson)
+    rating_count = lessonRatings.count()
+    average_rating = (
+        round(lessonRatings.aggregate(Avg("rating"))["rating__avg"], 1)
+        if lessonRatings.exists()
+        else 0.0
+    )
+
+    # rated_already = Rating.objects.filter(user=user, lesson=lesson).first()
+
     words = lesson.words.all()
 
     context = {
         "lesson": lesson,
         "words": words,
         "can_import": can_import,
+        "average_rating": average_rating,
+        "rating_count": rating_count,
     }
     return render(request, "base/lesson_details.html", context)
+
+
+@login_required(login_url="login")
+def rateLesson(request, lesson_id):
+
+    rateLessonForm = RateLessonForm()
+
+    # This view will handle the rating of a lesson
+    if request.method == "POST":
+        lesson = Lesson.objects.get(id=lesson_id)
+        if not lesson:
+            return HttpResponse("Lesson not found")
+
+        user = request.user
+        if not user.is_authenticated:
+            return HttpResponse("You must be logged in to rate a lesson.")
+
+        form = RateLessonForm(request.POST)
+        if form.is_valid():
+            rating_value = form.cleaned_data["rating"]
+
+            # Check if the user has already rated this lesson
+            existing_rating = Rating.objects.filter(user=user, lesson=lesson).first()
+            if existing_rating:
+                existing_rating.rating = rating_value
+                existing_rating.save()
+
+                lesson.changes_log = (
+                    (lesson.changes_log + "\n" if lesson.changes_log else "")
+                    + f"{timezone.now()} Rating updated by {user.username} to {rating_value}"
+                )
+                messages.success(request, "Your rating has been updated.")
+            else:
+                Rating.objects.create(user=user, lesson=lesson, rating=rating_value)
+                lesson.changes_log = (
+                    lesson.changes_log + "\n" if lesson.changes_log else ""
+                ) + f"{timezone.now()} Rated by {user.username} with {rating_value}"
+
+                messages.success(request, "Thank you for your rating!")
+            lesson.save()
+            return redirect("lesson-details", lesson_id=lesson_id)
+        else:
+            messages.error(request, "Invalid rating form submission.")
+
+    context = {
+        "rate_lesson_form": rateLessonForm,
+        "lesson": Lesson.objects.get(id=lesson_id),
+    }
+    return render(request, "base/rate_lesson.html", context)
 
 
 def wordDetails(request, lesson_id, prompt):
@@ -445,6 +508,7 @@ def editLesson(request, my_lesson_id):
 
     lesson_instance = myLesson.lesson
     edit_lesson_form = LessonForm(instance=lesson_instance)
+    edit_user_lesson_form = UserLessonForm(instance=myLesson)
 
     # Store original values for comparison
     original_data = {
@@ -453,6 +517,8 @@ def editLesson(request, my_lesson_id):
         "prompt_language": lesson_instance.prompt_language,
         "translation_language": lesson_instance.translation_language,
         "access_type": lesson_instance.access_type,
+        "target_progress": myLesson.target_progress,
+        "practice_window": myLesson.practice_window,
     }
 
     if request.method == "POST":
@@ -596,3 +662,6 @@ def deleteWord(request, my_word_id):
     }
 
     return render(request, "base/delete_word.html", context)
+
+
+# ------------Practice Views------------#

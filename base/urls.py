@@ -30,6 +30,11 @@ urlpatterns = [
         name="lesson-details",
     ),
     path(
+        "rate-lesson/<int:lesson_id>/",
+        views.rateLesson,
+        name="rate-lesson",
+    ),
+    path(
         "lessons-repository/<int:lesson_id>/<str:prompt>/",
         views.wordDetails,
         name="word-details",

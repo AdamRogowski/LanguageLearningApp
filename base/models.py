@@ -94,9 +94,7 @@ class UserLesson(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     target_progress = models.IntegerField(default=3)
-    lesson_directory = models.CharField(
-        max_length=255, blank=True, help_text="Directory where the lesson is stored."
-    )
+    practice_window = models.PositiveIntegerField(default=10)
 
     class Meta:
         unique_together = ("user", "lesson")
@@ -141,3 +139,27 @@ class Rating(models.Model):
 
     def __str__(self):
         return f"{self.user.username} rated {self.lesson.title} with {self.rating}"
+
+
+"""
+
+class UserDirectory(models.Model):
+
+    name = models.CharField(max_length=255)
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE
+    )  # Redundant field to link to User to help with queries
+    userLesson = models.ForeignKey(UserLesson, on_delete=models.CASCADE)
+    parent_directory = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="subdirectories",
+    )
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.userLesson.user.username})"
+"""

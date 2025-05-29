@@ -24,6 +24,15 @@ published on {{ lesson.created }}
 <br>
 last updated on {{ lesson.updated }}
 <br>
+rating {{ average_rating }} ({{ rating_count }} ratings)
+
+<form action="{% url 'rate-lesson' lesson.id %}" method="get" style="display:inline;">
+    <button type="submit">Rate lesson</button>
+</form>
+<br>
+last updated on {{ lesson.updated }}
+<br>
+
 <h5>{{ lesson.description }}</h5>
 
 <hr>
