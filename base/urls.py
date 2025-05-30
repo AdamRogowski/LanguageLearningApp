@@ -110,4 +110,6 @@ urlpatterns = [
         ),
         name="password_reset_complete",
     ),
+    path("profile/", views.profile_view, name="profile"),
+    path("settings/", views.settings_view, name="settings"),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

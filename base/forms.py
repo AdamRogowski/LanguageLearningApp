@@ -1,6 +1,7 @@
 from django.forms import ModelForm
-from .models import Lesson, Word, UserLesson, Language, AccessType, UserWord
+from .models import Word, UserLesson, Language, AccessType, UserWord, UserProfile
 from django import forms
+from django.contrib.auth.models import User
 
 
 class UserLessonForm(forms.ModelForm):
@@ -104,3 +105,15 @@ class RateLessonForm(forms.Form):
         widget=forms.Select(attrs={"class": "form-control", "autofocus": "autofocus"}),
         label="Rate this lesson (1-5)",
     )
+
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ["display_name", "preferred_language", "receive_notifications"]
+
+
+class UserForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "email"]

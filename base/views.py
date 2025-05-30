@@ -9,8 +9,23 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import UserCreationForm
-from .models import Lesson, Word, UserLesson, UserWord, AccessType, Rating, Language
-from .forms import RateLessonForm, UserLessonForm, UserWordForm
+from .models import (
+    Lesson,
+    Word,
+    UserLesson,
+    UserWord,
+    AccessType,
+    Rating,
+    Language,
+    UserProfile,
+)
+from .forms import (
+    RateLessonForm,
+    UserLessonForm,
+    UserWordForm,
+    UserProfileForm,
+    UserForm,
+)
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from random import shuffle
@@ -1137,3 +1152,33 @@ def generate_lesson_audio(request, my_lesson_id):
     myLesson.lesson.save()
     messages.success(request, "Audio files generated successfully!")
     return redirect("my-lesson-details", my_lesson_id=myLesson.id)
+
+
+# ---------------Profile Views---------------#
+
+
+@login_required
+def profile_view(request):
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    return render(request, "base/profile.html", {"user_profile": user_profile})
+
+
+@login_required
+def settings_view(request):
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    if request.method == "POST":
+        user_form = UserForm(request.POST, instance=request.user)
+        profile_form = UserProfileForm(request.POST, instance=user_profile)
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            messages.success(request, "Your settings have been updated.")
+            return redirect("profile")
+    else:
+        user_form = UserForm(instance=request.user)
+        profile_form = UserProfileForm(instance=user_profile)
+    return render(
+        request,
+        "base/settings.html",
+        {"user_form": user_form, "profile_form": profile_form},
+    )

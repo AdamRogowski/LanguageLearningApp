@@ -1,0 +1,12 @@
+{% extends "main.html" %}
+{% block content %}
+<h2>User Profile</h2>
+<ul>
+    <li><strong>Username:</strong> {{ user_profile.user.username }}</li>
+    <li><strong>Display Name:</strong> {{ user_profile.display_name }}</li>
+    <li><strong>Email:</strong> {{ user_profile.user.email }}</li>
+    <li><strong>Preferred Language:</strong> {{ user_profile.preferred_language }}</li>
+    <li><strong>Receive Notifications:</strong> {{ user_profile.receive_notifications|yesno:"Yes,No" }}</li>
+</ul>
+<a href="{% url 'settings' %}"><button>Edit Settings</button></a>
+{% endblock content %}

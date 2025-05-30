@@ -2,10 +2,30 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 import os
-from django.db.models.signals import pre_delete
+from django.db.models.signals import pre_delete, post_save
 from django.dispatch import receiver
 
 # Language learning app models
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    # Example preferences:
+    display_name = models.CharField(max_length=100, blank=True)
+    preferred_language = models.CharField(max_length=50, blank=True)
+    receive_notifications = models.BooleanField(default=True)
+    # Add more fields as needed
+
+    def __str__(self):
+        return f"Profile of {self.user.username}"
+
+
+@receiver(post_save, sender=User)
+def create_or_update_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+    else:
+        instance.userprofile.save()
 
 
 class AccessType(models.Model):
