@@ -1,5 +1,7 @@
 from django.urls import path
 from . import views
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 urlpatterns = [
@@ -68,5 +70,15 @@ urlpatterns = [
     path(
         "reset_progress/<int:my_lesson_id>/", views.resetProgress, name="reset-progress"
     ),
-    path("import-lesson-json/", views.import_lesson_json, name="import-lesson-json"),
-]
+    path("import_lesson_json/", views.import_lesson_json, name="import-lesson-json"),
+    path(
+        "generate_lesson_audio/<int:my_lesson_id>/start/",
+        views.generate_lesson_audio_start,
+        name="generate-lesson-audio-start",
+    ),
+    path(
+        "generate_lesson_audio/<int:my_lesson_id>/",
+        views.generate_lesson_audio,
+        name="generate-lesson-audio",
+    ),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

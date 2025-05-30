@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
+import os
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 
 # Language learning app models
 
@@ -75,17 +78,69 @@ class Lesson(models.Model):
         return f"{self.title} by {self.author.username}"
 
 
+@receiver(pre_delete, sender=Lesson)
+def delete_lesson_audio_files(sender, instance, **kwargs):
+    for word in instance.words.all():
+        if (
+            word.prompt_audio
+            and word.prompt_audio.path
+            and os.path.isfile(word.prompt_audio.path)
+        ):
+            os.remove(word.prompt_audio.path)
+        if (
+            word.usage_audio
+            and word.usage_audio.path
+            and os.path.isfile(word.usage_audio.path)
+        ):
+            os.remove(word.usage_audio.path)
+
+
 class Word(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="words")
     prompt = models.CharField(max_length=255)
     translation = models.CharField(max_length=255)
     usage = models.TextField(blank=True)
+    prompt_audio = models.FileField(upload_to="audio/prompts/", blank=True, null=True)
+    usage_audio = models.FileField(upload_to="audio/usages/", blank=True, null=True)
     hint = models.CharField(max_length=255, blank=True)
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
 
+    def delete(self, *args, **kwargs):
+        # Delete prompt audio file if it exists
+        if (
+            self.prompt_audio
+            and self.prompt_audio.path
+            and os.path.isfile(self.prompt_audio.path)
+        ):
+            os.remove(self.prompt_audio.path)
+        # Delete usage audio file if it exists
+        if (
+            self.usage_audio
+            and self.usage_audio.path
+            and os.path.isfile(self.usage_audio.path)
+        ):
+            os.remove(self.usage_audio.path)
+        super().delete(*args, **kwargs)
+
     def __str__(self):
         return f"{self.prompt} -> {self.translation}"
+
+
+@receiver(pre_delete, sender=Word)
+def delete_word_audio_files(sender, instance, **kwargs):
+    if (
+        instance.prompt_audio
+        and instance.prompt_audio.path
+        and os.path.isfile(instance.prompt_audio.path)
+    ):
+        os.remove(instance.prompt_audio.path)
+    if (
+        instance.usage_audio
+        and instance.usage_audio.path
+        and os.path.isfile(instance.usage_audio.path)
+    ):
+        os.remove(instance.usage_audio.path)
 
 
 class UserLesson(models.Model):

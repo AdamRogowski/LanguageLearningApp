@@ -17,6 +17,9 @@ from random import shuffle
 import json
 from Levenshtein import distance
 import difflib
+from .utils_tts import generate_audio_file
+import os
+from django.views.decorators.http import require_GET
 
 
 def loginPage(request):
@@ -185,6 +188,26 @@ def myLessonDetails(request, my_lesson_id):
                     hint=hint,
                     lesson=myLesson.lesson,
                 )
+                new_word.save()
+
+                # Generate prompt audio
+                if new_word.prompt:
+                    rel_path = generate_audio_file(
+                        new_word.prompt,
+                        myLesson.lesson.prompt_language,
+                        "audio/prompts",
+                        f"word_{new_word.id}_prompt.mp3",
+                    )
+                    new_word.prompt_audio = rel_path
+                # Generate usage audio
+                if new_word.usage:
+                    rel_path = generate_audio_file(
+                        new_word.usage,
+                        myLesson.lesson.prompt_language,
+                        "audio/usages",
+                        f"word_{new_word.id}_usage.mp3",
+                    )
+                    new_word.usage_audio = rel_path
                 new_word.save()
 
                 # Now create the UserWord instance with the new Word
@@ -691,19 +714,58 @@ def editWord(request, my_word_id):
     ):
         return HttpResponse("You do not have rights to edit this lesson!")
 
-    # Use UserWordForm, passing the UserWord instance and the related Word instance for initial values
     if request.method == "POST":
         edit_word_form = UserWordForm(
             request.POST, instance=myWord, word_instance=myWord.word
         )
         if edit_word_form.is_valid():
+            old_prompt = myWord.word.prompt
+            old_usage = myWord.word.usage
+
             # Update Word fields
             myWord.word.prompt = edit_word_form.cleaned_data["prompt"]
             myWord.word.translation = edit_word_form.cleaned_data["translation"]
             myWord.word.usage = edit_word_form.cleaned_data["usage"]
             myWord.word.hint = edit_word_form.cleaned_data["hint"]
             myWord.word.save()
-            # Update UserWord notes
+
+            # Check if prompt changed
+            if myWord.word.prompt and myWord.word.prompt != old_prompt:
+                # Remove old prompt audio file if it exists
+                if (
+                    myWord.word.prompt_audio
+                    and myWord.word.prompt_audio.path
+                    and os.path.isfile(myWord.word.prompt_audio.path)
+                ):
+                    os.remove(myWord.word.prompt_audio.path)
+                    myWord.word.prompt_audio = None
+                rel_path = generate_audio_file(
+                    myWord.word.prompt,
+                    myWord.word.lesson.prompt_language,
+                    "audio/prompts",
+                    f"word_{myWord.word.id}_prompt.mp3",
+                )
+                myWord.word.prompt_audio = rel_path
+
+            # Check if usage changed
+            if myWord.word.usage and myWord.word.usage != old_usage:
+                # Remove old usage audio file if it exists
+                if (
+                    myWord.word.usage_audio
+                    and myWord.word.usage_audio.path
+                    and os.path.isfile(myWord.word.usage_audio.path)
+                ):
+                    os.remove(myWord.word.usage_audio.path)
+                    myWord.word.usage_audio = None
+                rel_path = generate_audio_file(
+                    myWord.word.usage,
+                    myWord.word.lesson.prompt_language,
+                    "audio/usages",
+                    f"word_{myWord.word.id}_usage.mp3",
+                )
+                myWord.word.usage_audio = rel_path
+
+            myWord.word.save()
             myWord.notes = edit_word_form.cleaned_data["notes"]
             myWord.save()
 
@@ -1016,3 +1078,65 @@ def import_lesson_json(request):
         return redirect("my-lesson-details", my_lesson_id=user_lesson.id)
 
     return render(request, "base/import_lesson_json.html")
+
+
+@login_required(login_url="login")
+def generate_lesson_audio_start(request, my_lesson_id):
+    myLesson = get_object_or_404(UserLesson, id=my_lesson_id, user=request.user)
+    return render(request, "base/generate_lesson_audio.html", {"my_lesson": myLesson})
+
+
+from django.views.decorators.http import require_POST
+
+
+@login_required(login_url="login")
+@require_POST
+def generate_lesson_audio(request, my_lesson_id):
+    myLesson = get_object_or_404(UserLesson, id=my_lesson_id, user=request.user)
+    words = myLesson.lesson.words.all()
+
+    for word in words:
+        # --- PROMPT AUDIO ---
+        if word.prompt:
+            if (
+                word.prompt_audio
+                and word.prompt_audio.path
+                and os.path.isfile(word.prompt_audio.path)
+            ):
+                os.remove(word.prompt_audio.path)
+                word.prompt_audio = None
+            rel_path = generate_audio_file(
+                word.prompt,
+                word.lesson.prompt_language,
+                "audio/prompts",
+                f"word_{word.id}_prompt.mp3",
+            )
+            word.prompt_audio = rel_path
+
+        # --- USAGE AUDIO ---
+        if word.usage:
+            if (
+                word.usage_audio
+                and word.usage_audio.path
+                and os.path.isfile(word.usage_audio.path)
+            ):
+                os.remove(word.usage_audio.path)
+                word.usage_audio = None
+            rel_path = generate_audio_file(
+                word.usage,
+                word.lesson.prompt_language,
+                "audio/usages",
+                f"word_{word.id}_usage.mp3",
+            )
+            word.usage_audio = rel_path
+
+        word.save()
+
+    myLesson.lesson.updated = timezone.now()
+    myLesson.lesson.changes_log = (
+        (myLesson.lesson.changes_log + "\n" if myLesson.lesson.changes_log else "")
+        + f"{timezone.now()} Audio files generated for lesson by {request.user.username}"
+    )
+    myLesson.lesson.save()
+    messages.success(request, "Audio files generated successfully!")
+    return redirect("my-lesson-details", my_lesson_id=myLesson.id)

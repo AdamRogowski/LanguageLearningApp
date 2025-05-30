@@ -1,0 +1,12 @@
+# Django
+*.pyc
+__pycache__/
+db.sqlite3
+
+# Media files (user uploads, generated audio)
+media/audio
+
+# VSCode and OS files
+.vscode/
+.DS_Store
+Thumbs.db

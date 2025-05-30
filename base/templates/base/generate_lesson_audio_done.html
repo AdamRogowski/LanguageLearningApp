@@ -1,0 +1,6 @@
+{% extends "main.html" %}
+{% block content %}
+<h2>Audio Generation Complete</h2>
+<p>All audio files for <strong>{{ my_lesson.lesson.title }}</strong> have been generated or updated.</p>
+<a href="{% url 'my-lesson-details' my_lesson.id %}"><button>Back to Lesson</button></a>
+{% endblock content %}

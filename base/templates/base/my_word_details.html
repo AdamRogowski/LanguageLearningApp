@@ -16,9 +16,23 @@
 
 <div class="my-word-container">
     <div>
-        <h5>Prompt: {{ my_word.word.prompt }} </h5>
+        <h5>Prompt:  
+        {% if my_word.word.prompt_audio %}
+            <audio id="prompt_audio" src="{{ my_word.word.prompt_audio.url }}"></audio>
+            <button type="button" onclick="document.getElementById('prompt_audio').play()">{{ my_word.word.prompt }} 🔊</button>
+        {% else %}
+            {{ my_word.word.prompt }} (no audio available)
+        {% endif %}
+        </h5>
         <h5>Translation: {{ my_word.word.translation }} </h5>
-        <h5>Usage: {{ my_word.word.usage }} </h5>
+        <h5>Usage: 
+        {% if my_word.word.usage_audio %}
+            <audio id="usage_audio" src="{{ my_word.word.usage_audio.url }}"></audio>
+            <button type="button" onclick="document.getElementById('usage_audio').play()">{{ my_word.word.usage }} 🔊</button>
+        {% else %}
+            {{ my_word.word.usage }} (no audio available)
+        {% endif %}
+        </h5>
         <h5>Hint: {{ my_word.word.hint }} </h5>
         <h5>Created: {{ my_word.word.created }} </h5>
         <h5>Last updated: {{ my_word.word.updated }} </h5>
