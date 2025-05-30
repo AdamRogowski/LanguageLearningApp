@@ -112,4 +112,11 @@ urlpatterns = [
     ),
     path("profile/", views.profile_view, name="profile"),
     path("settings/", views.settings_view, name="settings"),
+    path(
+        "password_change/",
+        auth_views.PasswordChangeView.as_view(
+            template_name="base/password_change_form.html", success_url="/settings/"
+        ),
+        name="password_change",
+    ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -12,7 +12,7 @@
     {% endif %}
 {% endif %}
 
-published by {{lesson.author}}
+published by {{ lesson.author.userprofile.display_name }}
 <br>
 access rights: {{lesson.access_type.name}}
 <br>
