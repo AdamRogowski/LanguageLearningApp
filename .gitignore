@@ -10,3 +10,6 @@ media/audio
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Never track environment variables
+.env
