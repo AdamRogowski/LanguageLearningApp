@@ -19,7 +19,7 @@ from Levenshtein import distance
 import difflib
 from .utils_tts import generate_audio_file
 import os
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_POST
 
 
 def loginPage(request):
@@ -1084,9 +1084,6 @@ def import_lesson_json(request):
 def generate_lesson_audio_start(request, my_lesson_id):
     myLesson = get_object_or_404(UserLesson, id=my_lesson_id, user=request.user)
     return render(request, "base/generate_lesson_audio.html", {"my_lesson": myLesson})
-
-
-from django.views.decorators.http import require_POST
 
 
 @login_required(login_url="login")

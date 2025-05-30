@@ -1,6 +1,19 @@
 {% extends "main.html" %}
 {% block content %}
 <h2>Practice Feedback</h2>
+
+{% if user_word.word.prompt_audio %}
+    <audio id="prompt_audio" src="{{ user_word.word.prompt_audio.url }}"></audio>
+    <script>
+        window.onload = function() {
+            var audio = document.getElementById('prompt_audio');
+            if (audio) {
+                audio.play();
+            }
+        }
+    </script>
+{% endif %}
+
 {% if correct %}
     <div style="color: green;"><strong>Correct!</strong></div>
     {% if lev_distance > 0 %}
@@ -36,6 +49,10 @@
     <button type="button" onclick="toggleRollout('usage')">Show/Hide Usage</button>
     <div id="usage" style="display:none; margin-bottom:1em;">
         <em>{{ user_word.word.usage|default:"No usage example available." }}</em>
+        {% if user_word.word.usage_audio %}
+            <audio id="usage_audio" src="{{ user_word.word.usage_audio.url }}"></audio>
+            <button type="button" onclick="document.getElementById('usage_audio').play()">🔊 Listen to usage</button>
+        {% endif %}
     </div>
 </div>
 <div>
