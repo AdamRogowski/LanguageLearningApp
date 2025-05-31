@@ -119,4 +119,9 @@ urlpatterns = [
         ),
         name="password_change",
     ),
+    path(
+        "export-lesson/<int:lesson_id>/",
+        views.export_lesson_json,
+        name="export-lesson-json",
+    ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

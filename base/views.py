@@ -1095,6 +1095,39 @@ def import_lesson_json(request):
     return render(request, "base/import_lesson_json.html")
 
 
+@login_required
+def export_lesson_json(request, lesson_id):
+    lesson = Lesson.objects.get(id=lesson_id)
+
+    # Only allow the author or superuser to export
+    if request.user != lesson.author and not request.user.is_superuser:
+        return HttpResponse("You are not allowed to export this lesson.", status=403)
+
+    words = Word.objects.filter(lesson=lesson)
+    data = {
+        "title": lesson.title,
+        "description": lesson.description,
+        "prompt_language": lesson.prompt_language.name,
+        "translation_language": lesson.translation_language.name,
+        "access_type": lesson.access_type.name,
+        "words": [
+            {
+                "prompt": w.prompt,
+                "translation": w.translation,
+                "usage": w.usage,
+                "hint": w.hint,
+            }
+            for w in words
+        ],
+    }
+
+    json_str = json.dumps(data, ensure_ascii=False, indent=2)
+    filename = f"{lesson.title.replace(' ', '_')}.json"
+    response = HttpResponse(json_str, content_type="application/json")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
+
+
 @login_required(login_url="login")
 def generate_lesson_audio_start(request, my_lesson_id):
     myLesson = get_object_or_404(UserLesson, id=my_lesson_id, user=request.user)

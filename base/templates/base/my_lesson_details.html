@@ -30,6 +30,10 @@
     <button type="submit" {% if is_private %}disabled{% endif %}>Copy lesson</button>
 </form>
 
+<a href="{% url 'export-lesson-json' my_lesson.lesson.id %}">
+    <button type="button">Export JSON</button>
+</a>
+
 <form action="{% url 'edit-lesson' my_lesson.id %}" method="get" style="display:inline;">
     <button type="submit"  {% if not is_author %}disabled{% endif %}>Edit lesson</button>
 </form>

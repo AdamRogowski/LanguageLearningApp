@@ -143,3 +143,13 @@ EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", cast=str, default=None)
 EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool, default=True)
 EMAIL_USE_SSL = config("EMAIL_USE_SSL", cast=bool, default=False)
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# Session settings
+# Log out after 10 minutes (600 seconds) of inactivity:
+SESSION_COOKIE_AGE = 600  # seconds
+
+# Optional: Expire session when browser closes
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Optional: Reset session timer on every request (default is True)
+SESSION_SAVE_EVERY_REQUEST = True
