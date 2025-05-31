@@ -8,6 +8,11 @@
     <button type="submit">Submit</button>
 </form>
 
+<form method="get" action="{% url 'edit-word' user_word.id %}" style="display:inline;">
+    <input type="hidden" name="next" value="{% url 'practice' user_lesson_id=user_lesson_id %}">
+    <button type="submit">Edit This Word</button>
+</form>
+
 <!-- Rollout for hint and notes -->
 <div>
     <button type="button" onclick="toggleRollout('hint')">Show/Hide Hint</button>

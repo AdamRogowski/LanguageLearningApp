@@ -729,6 +729,8 @@ def editWord(request, my_word_id):
     ):
         return HttpResponse("You do not have rights to edit this lesson!")
 
+    # Detect if coming from practice session
+    next_url = request.GET.get("next")
     if request.method == "POST":
         edit_word_form = UserWordForm(
             request.POST, instance=myWord, word_instance=myWord.word
@@ -796,7 +798,10 @@ def editWord(request, my_word_id):
             )
             myWord.user_lesson.lesson.save()
 
-            messages.success(request, "Lesson updated successfully!")
+            messages.success(request, "Word updated successfully!")
+            # Redirect back to practice if 'next' is set, else to lesson details
+            if next_url:
+                return redirect(next_url)
             return redirect("my-lesson-details", my_lesson_id=myWord.user_lesson.id)
     else:
         edit_word_form = UserWordForm(instance=myWord, word_instance=myWord.word)
