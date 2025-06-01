@@ -2,17 +2,14 @@ import os
 from gtts import gTTS
 from django.conf import settings
 
-
-import os
-from gtts import gTTS
-from django.conf import settings
-
 # Map your Language model's name to gTTS language codes
 LANGUAGE_NAME_TO_GTTS = {
     "English": "en",
     "Polish": "pl",
     "Spanish": "es",
     "Danish": "da",
+    "French": "fr",
+    "German": "de",
     # Add more as needed
 }
 

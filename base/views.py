@@ -4,6 +4,7 @@ from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
 from django.db.models import Q  # Import Q for complex queries
 from django.db.models import Avg  # Import Avg for aggregation
+from django.db.models.functions import Lower
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -108,7 +109,7 @@ def myLessons(request, pk):
     if request.user.id != user.id and request.user.is_superuser == False:
         return HttpResponse("You are not allowed here!")
 
-    user_lessons = UserLesson.objects.filter(user=user).order_by("-id")
+    user_lessons = UserLesson.objects.filter(user=user).order_by(Lower("lesson__title"))
     context = {
         "user": user,
         "my_lessons": user_lessons,
@@ -138,7 +139,9 @@ def myLessonDetails(request, my_lesson_id):
         )
     # ----------------------------------------------------------------------
 
-    myWords = UserWord.objects.filter(user_lesson=myLesson).order_by("-id")
+    myWords = UserWord.objects.filter(user_lesson=myLesson).order_by(
+        Lower("word__prompt")
+    )
     my_Words_search_query = request.GET.get("q") or ""
 
     if my_Words_search_query:
@@ -148,7 +151,7 @@ def myLessonDetails(request, my_lesson_id):
             | Q(word__usage__icontains=my_Words_search_query)
             | Q(word__hint__icontains=my_Words_search_query)
             | Q(notes__icontains=my_Words_search_query)
-        ).order_by("id")
+        ).order_by(Lower("word__prompt"))
 
     is_author = myLesson.lesson.author == request.user
 
@@ -327,7 +330,7 @@ def lessonsRepository(request):
     # This view will display the lessons repository
     public_lessons = Lesson.objects.filter(
         access_type__name__in=["readonly", "write"]
-    ).order_by("-id")
+    ).order_by(Lower("title"))
 
     lesson_search_query = request.GET.get("q") if request.GET.get("q") != None else ""
     public_lessons = public_lessons.filter(
@@ -335,7 +338,7 @@ def lessonsRepository(request):
         | Q(description__icontains=lesson_search_query)
         | Q(prompt_language__name__icontains=lesson_search_query)
         | Q(translation_language__name__icontains=lesson_search_query)
-    ).order_by("-created")
+    ).order_by(Lower("title"))
 
     context = {
         "public_lessons": public_lessons,
@@ -371,7 +374,7 @@ def lessonDetails(request, lesson_id):
 
     # rated_already = Rating.objects.filter(user=user, lesson=lesson).first()
 
-    words = lesson.words.all()
+    words = lesson.words.all().order_by(Lower("prompt"))
 
     context = {
         "lesson": lesson,
@@ -754,6 +757,7 @@ def editWord(request, my_word_id):
                     and myWord.word.prompt_audio.path
                     and os.path.isfile(myWord.word.prompt_audio.path)
                 ):
+                    print(f"Removing old prompt audio: {myWord.word.prompt_audio.path}")
                     os.remove(myWord.word.prompt_audio.path)
                     myWord.word.prompt_audio = None
                 rel_path = generate_audio_file(
@@ -772,6 +776,7 @@ def editWord(request, my_word_id):
                     and myWord.word.usage_audio.path
                     and os.path.isfile(myWord.word.usage_audio.path)
                 ):
+                    print(f"Removing old usage audio: {myWord.word.usage_audio.path}")
                     os.remove(myWord.word.usage_audio.path)
                     myWord.word.usage_audio = None
                 rel_path = generate_audio_file(
@@ -928,10 +933,12 @@ def practice(request, user_lesson_id):
         }
         return redirect("practice-feedback", user_lesson_id=user_lesson_id)
 
+    context = {"user_word": user_word, "user_lesson_id": user_lesson_id}
+
     return render(
         request,
         "base/practice.html",
-        {"user_word": user_word, "user_lesson_id": user_lesson_id},
+        context,
     )
 
 
@@ -990,8 +997,10 @@ def practice_feedback(request, user_lesson_id):
 def cancel_practice(request, user_lesson_id):
     window_key = f"practice_{user_lesson_id}_window"
     pool_key = f"practice_{user_lesson_id}_pool"
+    answer_key = f"practice_{user_lesson_id}_answer"
     request.session.pop(window_key, None)
     request.session.pop(pool_key, None)
+    request.session.pop(answer_key, None)
     messages.info(request, "Practice session cancelled.")
     return redirect("my-lesson-details", my_lesson_id=user_lesson_id)
 
@@ -1012,9 +1021,6 @@ def highlight_differences(user_answer, correct_answer):
 
 
 # ------------Import Lesson from JSON------------#
-
-
-from django.core.exceptions import ValidationError
 
 
 @login_required(login_url="login")

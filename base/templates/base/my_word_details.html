@@ -18,7 +18,7 @@
     <div>
         <h5>Prompt:  
         {% if my_word.word.prompt_audio %}
-            <audio id="prompt_audio" src="{{ my_word.word.prompt_audio.url }}"></audio>
+            <audio id="prompt_audio" src="{{ my_word.word.prompt_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
             <button type="button" onclick="document.getElementById('prompt_audio').play()">{{ my_word.word.prompt }} 🔊</button>
         {% else %}
             {{ my_word.word.prompt }} (no audio available)
@@ -27,7 +27,7 @@
         <h5>Translation: {{ my_word.word.translation }} </h5>
         <h5>Usage: 
         {% if my_word.word.usage_audio %}
-            <audio id="usage_audio" src="{{ my_word.word.usage_audio.url }}"></audio>
+            <audio id="usage_audio" src="{{ my_word.word.usage_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
             <button type="button" onclick="document.getElementById('usage_audio').play()">{{ my_word.word.usage }} 🔊</button>
         {% else %}
             {{ my_word.word.usage }} (no audio available)

@@ -3,7 +3,7 @@
 <h2>Practice Feedback</h2>
 
 {% if user_word.word.prompt_audio %}
-    <audio id="prompt_audio" src="{{ user_word.word.prompt_audio.url }}"></audio>
+    <audio id="prompt_audio" src="{{ user_word.word.prompt_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
     <script>
         window.onload = function() {
             var audio = document.getElementById('prompt_audio');
@@ -55,7 +55,7 @@
     <div id="usage" style="display:none; margin-bottom:1em;">
         <em>{{ user_word.word.usage|default:"No usage example available." }}</em>
         {% if user_word.word.usage_audio %}
-            <audio id="usage_audio" src="{{ user_word.word.usage_audio.url }}"></audio>
+            <audio id="usage_audio" src="{{ user_word.word.usage_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
             <button type="button" onclick="document.getElementById('usage_audio').play()">🔊 Listen to usage</button>
         {% endif %}
     </div>

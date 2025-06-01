@@ -145,8 +145,8 @@ EMAIL_USE_SSL = config("EMAIL_USE_SSL", cast=bool, default=False)
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Session settings
-# Log out after 10 minutes (600 seconds) of inactivity:
-SESSION_COOKIE_AGE = 600  # seconds
+# Log out after 30 minutes (1800 seconds) of inactivity:
+SESSION_COOKIE_AGE = 1800  # seconds
 
 # Optional: Expire session when browser closes
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
