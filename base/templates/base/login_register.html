@@ -12,7 +12,22 @@
         <input type="text" name="username" id="username" placeholder="Enter Username" autofocus />
 
         <label for="password">Password:</label>
-        <input type="password" name="password" placeholder="Enter Password" />
+        <input type="password" name="password" placeholder="Enter Password" id="password-input" />
+
+        <label>
+            <input type="checkbox" onclick="togglePassword()"> Show Password
+        </label>
+
+        <script>
+        function togglePassword() {
+            var x = document.getElementById("password-input");
+            if (x.type === "password") {
+                x.type = "text";
+            } else {
+                x.type = "password";
+            }
+        }
+        </script>
 
         <input type="submit" value="Login" />
     </form>

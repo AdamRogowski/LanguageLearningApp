@@ -1204,7 +1204,16 @@ def generate_lesson_audio(request, my_lesson_id):
 @login_required
 def profile_view(request):
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
-    return render(request, "base/profile.html", {"user_profile": user_profile})
+    user = request.user
+    memory_bytes = get_user_memory_usage(user)
+    memory_mb = round(memory_bytes / (1024 * 1024), 2)
+
+    context = {
+        "user_profile": user_profile,
+        "memory_usage_mb": memory_mb,
+    }
+
+    return render(request, "base/profile.html", context)
 
 
 @login_required
@@ -1226,3 +1235,49 @@ def settings_view(request):
         "base/settings.html",
         {"user_form": user_form, "profile_form": profile_form},
     )
+
+
+def get_user_memory_usage(user):
+    total_chars = 0
+    total_audio_bytes = 0
+
+    # Get all lessons authored by the user
+    lessons = Lesson.objects.filter(author=user)
+
+    for lesson in lessons:
+        # Sum metadata fields for the lesson
+        total_chars += len(lesson.title or "")
+        total_chars += len(lesson.description or "")
+        total_chars += len(
+            lesson.prompt_language.name if lesson.prompt_language else ""
+        )
+        total_chars += len(
+            lesson.translation_language.name if lesson.translation_language else ""
+        )
+        total_chars += len(lesson.access_type.name if lesson.access_type else "")
+
+        # For each word in the lesson
+        for word in lesson.words.all():
+            total_chars += len(word.prompt or "")
+            total_chars += len(word.translation or "")
+            total_chars += len(word.usage or "")
+            total_chars += len(word.hint or "")
+
+            # Add audio file sizes if they exist
+            if (
+                word.prompt_audio
+                and word.prompt_audio.path
+                and os.path.isfile(word.prompt_audio.path)
+            ):
+                total_audio_bytes += os.path.getsize(word.prompt_audio.path)
+            if (
+                word.usage_audio
+                and word.usage_audio.path
+                and os.path.isfile(word.usage_audio.path)
+            ):
+                total_audio_bytes += os.path.getsize(word.usage_audio.path)
+
+    # Each character is 1 byte in UTF-8 for plain ASCII, but could be more for Unicode.
+    # For a rough estimate, assume 1 char = 1 byte.
+    total_bytes = total_chars + total_audio_bytes
+    return total_bytes

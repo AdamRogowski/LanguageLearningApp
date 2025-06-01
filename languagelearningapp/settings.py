@@ -153,3 +153,9 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Optional: Reset session timer on every request (default is True)
 SESSION_SAVE_EVERY_REQUEST = True
+
+ALLOWED_HOSTS = [
+    "192.168.1.166",
+    "localhost",
+    "127.0.0.1",
+]

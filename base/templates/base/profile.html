@@ -8,5 +8,6 @@
     <li><strong>Preferred Language:</strong> {{ user_profile.preferred_language }}</li>
     <li><strong>Receive Notifications:</strong> {{ user_profile.receive_notifications|yesno:"Yes,No" }}</li>
 </ul>
+<h5>Used memory: {{memory_usage_mb}} MB</h5>
 <a href="{% url 'settings' %}"><button>Edit Settings</button></a>
 {% endblock content %}
