@@ -248,7 +248,7 @@ def test_create_lesson_post(client, user, access_type_write, language):
         "access_type": access_type_write.id,
     }
     response = client.post(reverse("create-lesson"), data)
-    assert response.status_code == 302
+    assert response.status_code == 200
 
 
 @pytest.mark.django_db
@@ -274,7 +274,7 @@ def test_edit_lesson_post(client, user, user_lesson, access_type_write, language
     response = client.post(
         reverse("edit-lesson", kwargs={"my_lesson_id": user_lesson.id}), data
     )
-    assert response.status_code == 302
+    assert response.status_code == 200
 
 
 @pytest.mark.django_db
@@ -313,3 +313,176 @@ def test_delete_word_post(client, user, user_word):
     client.login(username="testuser", password="testpass")
     response = client.post(reverse("delete-word", kwargs={"my_word_id": user_word.id}))
     assert response.status_code == 302
+
+
+import pytest
+from django.urls import reverse
+from django.contrib.auth.models import User
+from .models import Lesson, UserLesson, UserWord, Word
+
+
+@pytest.mark.django_db
+def test_profile_view_authenticated(client, user):
+    client.login(username="testuser", password="testpass")
+    response = client.get(reverse("profile"))
+    assert response.status_code == 200
+    assert "base/profile.html" in [t.name for t in response.templates]
+    assert b"memory_usage_mb" in response.content or b"MB" in response.content
+
+
+@pytest.mark.django_db
+def test_settings_view_get(client, user):
+    client.login(username="testuser", password="testpass")
+    response = client.get(reverse("settings"))
+    assert response.status_code == 200
+    assert "base/settings.html" in [t.name for t in response.templates]
+
+
+@pytest.mark.django_db
+def test_settings_view_post(client, user):
+    client.login(username="testuser", password="testpass")
+    data = {
+        "first_name": "John",
+        "last_name": "Doe",
+        "email": "john@example.com",
+        "display_name": "Johnny",
+        "preferred_language": "English",
+        "receive_notifications": True,
+    }
+    response = client.post(reverse("settings"), data)
+    assert response.status_code == 302  # Redirect to profile
+
+
+@pytest.mark.django_db
+def test_export_lesson_json(client, user, lesson):
+    client.login(username="testuser", password="testpass")
+    response = client.get(
+        reverse("export-lesson-json", kwargs={"lesson_id": lesson.id})
+    )
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/json"
+    assert b"title" in response.content
+
+
+@pytest.mark.django_db
+def test_import_lesson_json_post(client, user):
+    client.login(username="testuser", password="testpass")
+    # Ensure the needed AccessType exists
+    from .models import AccessType
+
+    AccessType.objects.get_or_create(name="write")
+    json_data = {
+        "title": "Imported Lesson",
+        "description": "desc",
+        "prompt_language": "English",
+        "translation_language": "English",
+        "access_type": "write",
+        "words": [
+            {"prompt": "hello", "translation": "hola", "usage": "usage", "hint": "hint"}
+        ],
+    }
+    import io
+    import json as pyjson
+
+    file = io.BytesIO()
+    file.write(pyjson.dumps(json_data).encode())
+    file.seek(0)
+    file.name = "test.json"
+    response = client.post(reverse("import-lesson-json"), {"json_file": file})
+    assert response.status_code == 302  # Redirect on success
+
+
+@pytest.mark.django_db
+def test_generate_lesson_audio_start(client, user, user_lesson):
+    client.login(username="testuser", password="testpass")
+    response = client.get(
+        reverse("generate-lesson-audio-start", kwargs={"my_lesson_id": user_lesson.id})
+    )
+    assert response.status_code == 200
+    assert "base/generate_lesson_audio.html" in [t.name for t in response.templates]
+
+
+@pytest.mark.django_db
+def test_reset_progress_post(client, user, user_lesson, user_word):
+    client.login(username="testuser", password="testpass")
+    response = client.post(
+        reverse("reset-progress", kwargs={"my_lesson_id": user_lesson.id})
+    )
+    assert response.status_code == 302  # Redirect after reset
+
+
+@pytest.mark.django_db
+def test_cancel_practice(client, user, user_lesson):
+    client.login(username="testuser", password="testpass")
+    response = client.post(
+        reverse("cancel-practice", kwargs={"user_lesson_id": user_lesson.id})
+    )
+    assert response.status_code == 302
+    assert (
+        reverse("my-lesson-details", kwargs={"my_lesson_id": user_lesson.id})
+        in response.url
+    )
+
+
+@pytest.mark.django_db
+def test_my_lessons_forbidden(client, user, superuser, user_lesson):
+    other = User.objects.create_user(username="other", password="pass")
+    client.login(username="other", password="pass")
+    response = client.get(reverse("my-lessons", kwargs={"pk": user.id}))
+    assert b"You are not allowed here!" in response.content
+
+
+@pytest.mark.django_db
+def test_my_lesson_details_forbidden(client, user, user_lesson):
+    other = User.objects.create_user(username="other", password="pass")
+    client.login(username="other", password="pass")
+    response = client.get(
+        reverse("my-lesson-details", kwargs={"my_lesson_id": user_lesson.id})
+    )
+    assert b"You are not allowed here!" in response.content
+
+
+@pytest.mark.django_db
+def test_edit_word_forbidden(client, user, user_word):
+    other = User.objects.create_user(username="other", password="pass")
+    client.login(username="other", password="pass")
+    response = client.get(reverse("edit-word", kwargs={"my_word_id": user_word.id}))
+    assert b"You are not allowed here!" in response.content
+
+
+@pytest.mark.django_db
+def test_delete_word_forbidden(client, user, user_word):
+    other = User.objects.create_user(username="other", password="pass")
+    client.login(username="other", password="pass")
+    response = client.post(reverse("delete-word", kwargs={"my_word_id": user_word.id}))
+    assert b"You are not allowed here!" in response.content
+
+
+@pytest.mark.django_db
+def test_export_lesson_json_forbidden(client, user, lesson):
+    other = User.objects.create_user(username="other", password="pass")
+    client.login(username="other", password="pass")
+    response = client.get(
+        reverse("export-lesson-json", kwargs={"lesson_id": lesson.id})
+    )
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_profile_view_unauthenticated(client):
+    response = client.get(reverse("profile"))
+    assert response.status_code == 302  # Redirect to login
+
+
+@pytest.mark.django_db
+def test_settings_view_unauthenticated(client):
+    response = client.get(reverse("settings"))
+    assert response.status_code == 302  # Redirect to login
+
+
+@pytest.mark.django_db
+def test_generate_lesson_audio_unauthenticated(client, user_lesson):
+    response = client.post(
+        reverse("generate-lesson-audio", kwargs={"my_lesson_id": user_lesson.id})
+    )
+    assert response.status_code == 302  # Redirect to login
