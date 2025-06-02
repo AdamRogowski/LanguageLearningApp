@@ -53,20 +53,20 @@ urlpatterns = [
     path("edit_word/<int:my_word_id>/", views.editWord, name="edit-word"),
     path("delete_word/<int:my_word_id>/", views.deleteWord, name="delete-word"),
     path(
-        "start_practice/<int:user_lesson_id>/",
+        "start_practice/<int:user_lesson_id>/<str:mode>/",
         views.start_practice,
         name="start-practice",
     ),
-    path("practice/<int:user_lesson_id>/", views.practice, name="practice"),
+    path("practice/<int:user_lesson_id>/<str:mode>/", views.practice, name="practice"),
+    path(
+        "practice_feedback/<int:user_lesson_id>/<str:mode>/",
+        views.practice_feedback,
+        name="practice-feedback",
+    ),
     path(
         "cancel_practice/<int:user_lesson_id>/",
         views.cancel_practice,
         name="cancel-practice",
-    ),
-    path(
-        "practice_feedback/<int:user_lesson_id>/",
-        views.practice_feedback,
-        name="practice-feedback",
     ),
     path(
         "reset_progress/<int:my_lesson_id>/", views.resetProgress, name="reset-progress"

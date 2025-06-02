@@ -1,6 +1,12 @@
 {% extends "main.html" %}
 {% block content %}
-<h2>Practice Feedback</h2>
+<h2>
+    {% if mode == "reverse" %}
+        Reverse Practice Feedback
+    {% else %}
+        Practice Feedback
+    {% endif %}
+</h2>
 
 {% if user_word.word.prompt_audio %}
     <audio id="prompt_audio" src="{{ user_word.word.prompt_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
@@ -40,7 +46,7 @@
 {% endif %}
 
 <form method="get" action="{% url 'edit-word' user_word.id %}" style="display:inline;">
-    <input type="hidden" name="next" value="{% url 'practice-feedback' user_lesson_id=user_lesson_id %}">
+    <input type="hidden" name="next" value="{% url 'practice-feedback' user_lesson_id=user_lesson_id mode=mode %}">
     <button type="submit">Edit This Word</button>
 </form>
 <!-- Rollout for hint, usage, and notes -->

@@ -37,6 +37,14 @@ from .utils_tts import generate_audio_file
 import os
 from django.views.decorators.http import require_POST
 
+from .utils_practice_session import (
+    PRACTICE_MODES,
+    get_mode_from_str,
+    get_practice_session_keys,
+    initialize_practice_session,
+    get_question_and_answer,
+)
+
 
 def loginPage(request):
     page = "login"
@@ -868,34 +876,15 @@ def deleteWord(request, my_word_id):
 
 
 @login_required
-def start_practice(request, user_lesson_id):
-    window_key = f"practice_{user_lesson_id}_window"
-    pool_key = f"practice_{user_lesson_id}_pool"
-    answer_key = f"practice_{user_lesson_id}_answer"
-    # Ensure only one session per user per lesson by clearing any existing session data
-    request.session.pop(window_key, None)
-    request.session.pop(pool_key, None)
-    request.session.pop(answer_key, None)
-
+def start_practice(request, user_lesson_id, mode="normal"):
     user_lesson = get_object_or_404(UserLesson, id=user_lesson_id, user=request.user)
-    user_words = list(
-        UserWord.objects.filter(
-            user_lesson=user_lesson, current_progress__lt=user_lesson.target_progress
-        ).values_list("id", flat=True)
-    )
-    shuffle(user_words)
-    window = user_words[: user_lesson.practice_window]
-    pool = user_words[user_lesson.practice_window :]
-    request.session[window_key] = window
-    request.session[pool_key] = pool
-    return redirect("practice", user_lesson_id=user_lesson_id)
+    initialize_practice_session(request, user_lesson, mode)
+    return redirect("practice", user_lesson_id=user_lesson_id, mode=mode)
 
 
 @login_required
-def practice(request, user_lesson_id):
-    window_key = f"practice_{user_lesson_id}_window"
-    pool_key = f"practice_{user_lesson_id}_pool"
-    answer_key = f"practice_{user_lesson_id}_answer"
+def practice(request, user_lesson_id, mode="normal"):
+    window_key, pool_key, answer_key = get_practice_session_keys(user_lesson_id, mode)
     window = request.session.get(window_key, [])
     pool = request.session.get(pool_key, [])
 
@@ -914,11 +903,11 @@ def practice(request, user_lesson_id):
         user_lesson_id=user_lesson_id,
     )
 
+    question, correct_answer = get_question_and_answer(user_word, mode)
+
     if request.method == "POST":
         answer = request.POST.get("answer", "").strip()
-        correct_answer = user_word.word.prompt.strip()
         lev_distance = distance(answer.lower(), correct_answer.lower())
-        # How many errors are allowed
         correct = lev_distance < user_word.user_lesson.allowed_error_margin + 1
         diff_html = (
             highlight_differences(answer, correct_answer) if lev_distance != 0 else ""
@@ -931,28 +920,29 @@ def practice(request, user_lesson_id):
             "diff_html": diff_html,
             "lev_distance": lev_distance,
         }
-        return redirect("practice-feedback", user_lesson_id=user_lesson_id)
-
-    context = {"user_word": user_word, "user_lesson_id": user_lesson_id}
+        return redirect("practice-feedback", user_lesson_id=user_lesson_id, mode=mode)
 
     return render(
         request,
         "base/practice.html",
-        context,
+        {
+            "user_word": user_word,
+            "user_lesson_id": user_lesson_id,
+            "question": question,
+            "mode": mode,
+        },
     )
 
 
 @login_required
-def practice_feedback(request, user_lesson_id):
-    window_key = f"practice_{user_lesson_id}_window"
-    pool_key = f"practice_{user_lesson_id}_pool"
-    answer_key = f"practice_{user_lesson_id}_answer"
+def practice_feedback(request, user_lesson_id, mode="normal"):
+    window_key, pool_key, answer_key = get_practice_session_keys(user_lesson_id, mode)
     window = request.session.get(window_key, [])
     pool = request.session.get(pool_key, [])
     answer_data = request.session.get(answer_key)
 
     if not answer_data or not window:
-        return redirect("practice", user_lesson_id=user_lesson_id)
+        return redirect("practice", user_lesson_id=user_lesson_id, mode=mode)
 
     user_word = get_object_or_404(
         UserWord,
@@ -962,7 +952,6 @@ def practice_feedback(request, user_lesson_id):
     )
 
     if request.method == "POST":
-        # Accept as correct or continue
         if answer_data["correct"] or "accept_as_correct" in request.POST:
             user_word.current_progress += 1
             user_word.save()
@@ -974,33 +963,33 @@ def practice_feedback(request, user_lesson_id):
             user_word.save()
             word_id = window.pop(0)
             window.append(word_id)
-        # Save updated session state
         request.session[window_key] = window
         request.session[pool_key] = pool
         request.session.pop(answer_key, None)
-        return redirect("practice", user_lesson_id=user_lesson_id)
+        return redirect("practice", user_lesson_id=user_lesson_id, mode=mode)
 
     context = {
         "user_word": user_word,
         "user_lesson_id": user_lesson_id,
         "answer": answer_data["answer"],
         "correct": answer_data["correct"],
-        # "correct_answer": answer_data["correct_answer"],
         "diff_html": answer_data.get("diff_html", ""),
         "lev_distance": answer_data.get("lev_distance", ""),
+        "mode": mode,
     }
-
     return render(request, "base/practice_feedback.html", context)
 
 
 @login_required
 def cancel_practice(request, user_lesson_id):
-    window_key = f"practice_{user_lesson_id}_window"
-    pool_key = f"practice_{user_lesson_id}_pool"
-    answer_key = f"practice_{user_lesson_id}_answer"
-    request.session.pop(window_key, None)
-    request.session.pop(pool_key, None)
-    request.session.pop(answer_key, None)
+    # Cancel all possible practice sessions for this lesson (all modes)
+    for mode in PRACTICE_MODES:
+        window_key, pool_key, answer_key = get_practice_session_keys(
+            user_lesson_id, mode
+        )
+        request.session.pop(window_key, None)
+        request.session.pop(pool_key, None)
+        request.session.pop(answer_key, None)
     messages.info(request, "Practice session cancelled.")
     return redirect("my-lesson-details", my_lesson_id=user_lesson_id)
 

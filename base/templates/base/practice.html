@@ -1,7 +1,19 @@
 {% extends "main.html" %}
 {% block content %}
-<h2>Practice Mode</h2>
-<p>Translate: {{ user_word.word.translation }}</p>
+<h2>
+    {% if mode == "reverse" %}
+        Reverse Practice Mode
+    {% else %}
+        Practice Mode
+    {% endif %}
+</h2>
+<p>
+    {% if mode == "reverse" %}
+        Translate: <strong>{{ question }}</strong>
+    {% else %}
+        What is the prompt for: <strong>{{ question }}</strong>
+    {% endif %}
+</p>
 <form method="post">
     {% csrf_token %}
     <input type="text" name="answer" autocomplete="off" autofocus>
@@ -9,7 +21,7 @@
 </form>
 
 <form method="get" action="{% url 'edit-word' user_word.id %}" style="display:inline;">
-    <input type="hidden" name="next" value="{% url 'practice' user_lesson_id=user_lesson_id %}">
+    <input type="hidden" name="next" value="{% url 'practice' user_lesson_id=user_lesson_id mode=mode %}">
     <button type="submit">Edit This Word</button>
 </form>
 
