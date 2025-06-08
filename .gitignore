@@ -6,6 +6,8 @@ db.sqlite3
 # Media files (user uploads, generated audio)
 media/audio
 
+staticfiles/
+
 # VSCode and OS files
 .vscode/
 .DS_Store
