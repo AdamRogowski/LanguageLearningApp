@@ -2,28 +2,69 @@
 
 {% block content %}
 
-<h1><a href="{% url 'my-lessons' user.id %}">{{user.username}}'s lessons</a></h1>
+<div style="max-width: 800px; margin: 40px auto; text-align: center;">
 
-<a href="{% url 'lessons-repository' %}">Search lessons repository</a>
-<br>
+  <h1 style="margin-bottom: 10px;">
+  <a href="{% url 'my-lessons' user.id %}" 
+     style="text-decoration: none; 
+            color: #ffffff; 
+            font-size: 36px; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            font-weight: 600; 
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.3);">
+    👤 {{ user.username }}'s Lessons
+  </a>
+</h1>
 
-<a href="{% url 'create-lesson' %}">
-    <button type="button">Create lesson</button>
-</a>
-
-<hr>
-  
-
-<div class="my-lessons-container">
-
-    <div>
-    {% for my_lesson in my_lessons %}
-        <div>
-            <a href="{% url 'my-lesson-details' my_lesson.id %}">{{ my_lesson.lesson.title }}</a>
-        </div>    
-    {% endfor %}
-
+<div style="margin-bottom: 25px;">
+  <a href="{% url 'lessons-repository' %}" 
+     style="color: #00c3ff; 
+            text-decoration: none; 
+            font-size: 18px; 
+            font-weight: 500;">
+    🔍 Explore Public Lessons
+  </a>
 </div>
 
+
+  <a href="{% url 'create-lesson' %}">
+    <button type="button" style="
+      background-color: #28a745;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-bottom: 30px;
+    ">➕ Create Lesson</button>
+  </a>
+
+  <hr style="margin: 30px 0; border-color: #ccc;">
+
+  <div class="my-lessons-container" style="display: flex; flex-direction: column; gap: 15px;">
+    {% for my_lesson in my_lessons %}
+      <div style="
+        background-color: #f0f0f0;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+      ">
+        <a href="{% url 'my-lesson-details' my_lesson.id %}" style="
+          color: #333;
+          font-size: 18px;
+          font-weight: bold;
+          text-decoration: none;
+        " onmouseover="this.style.color='#1E90FF'" onmouseout="this.style.color='#333'">
+          📘 {{ my_lesson.lesson.title }}
+        </a>
+      </div>
+    {% empty %}
+      <p style="color: white;">You haven't created any lessons yet.</p>
+    {% endfor %}
+  </div>
+
+</div>
 
 {% endblock content %}
