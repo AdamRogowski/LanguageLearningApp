@@ -1,78 +1,19 @@
 {% load static %}
 <a href="/">
-    <img src="{% static 'images/lang.png' %}" alt="Lang" style="width: 100%; max-width: 500px; display: block; margin: 20px auto;">
+    <img src="{% static 'images/logo.png' %}" alt="Home" style="height: 100px;">
 </a>
 
 <br>
 
 {% if user.is_authenticated %}
-<div style="text-align: center;">
-    <div style="
-      background-color: #1E90FF;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 6px;
-      font-weight: bold;
-      font-family: Arial, sans-serif;
-      display: inline-block;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      margin-top: 10px;
-    ">
-      Welcome, {{ user.username }}!
-    </div>
-  </div>
-  
-    <style>
-        .logout-btn {
-          display: inline-block;
-          background-color: #1E90FF;
-          color: white;
-          padding: 10px 20px;
-          border-radius: 6px;
-          text-decoration: none;
-          font-weight: bold;
-          font-family: Arial, sans-serif;
-          box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-          margin-top: 10px;
-          transition: background-color 0.3s ease, transform 0.2s ease;
-        }
-      
-        .logout-btn:hover {
-          background-color: #0066cc;
-          transform: scale(1.05);
-        }
-      </style>
-      
-      <a href="{% url 'logout' %}" class="logout-btn">🔓 Logout</a>
-      
-
+    <p>Welcome home, {{ user.username }}!</p>
+    <a href="{% url 'logout' %}">Logout</a>
+    <a href="{% url 'profile' %}">Profile</a>
+    <a href="{% url 'settings' %}">Settings</a>
 {% else %}
 
 
-<style>
-    .login-btn {
-      display: inline-block;
-      background-color: #1E90FF;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 6px;
-      text-decoration: none;
-      font-weight: bold;
-      font-family: Arial, sans-serif;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-      margin-top: 10px;
-      transition: background-color 0.3s ease, transform 0.2s ease;
-    }
-  
-    .login-btn:hover {
-      background-color: #0066cc;
-      transform: scale(1.05);
-    }
-  </style>
-  
-  <a href="{% url 'login' %}" class="login-btn">🔓 Login</a>
-  
-
+    <a href="{% url 'login' %}">Login</a>
 {% endif %}
 
 <hr>
