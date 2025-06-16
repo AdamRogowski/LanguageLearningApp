@@ -1,19 +1,49 @@
 {% load static %}
-<a href="/">
-    <img src="{% static 'images/lang.png' %}" alt="Home" style="height: 100px;">
+
+<!-- Logo Image -->
+<a href="/" style="text-decoration: none;">
+    <img src="{% static 'images/lang.png' %}" alt="Lang" 
+         style="width: 100%; max-width: 500px; display: block; margin: 30px auto 20px auto; border-radius: 8px;">
 </a>
 
-<br>
+<!-- User Section -->
+<div style="text-align: center; margin-bottom: 20px;">
 
-{% if user.is_authenticated %}
-    <p>Welcome, {{ user.username }}!</p>
-    <a href="{% url 'logout' %}">Logout</a>
-    <a href="{% url 'profile' %}">Profile</a>
-    <a href="{% url 'settings' %}">Settings</a>
-{% else %}
+    {% if user.is_authenticated %}
+        <p style="
+            color: white;
+            font-size: 20px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        ">
+            Welcome, {{ user.username }}!
+        </p>
 
+        <!-- Authenticated User Buttons -->
+        <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+            <a href="{% url 'logout' %}" 
+               style="background-color: #ff4d4d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+               Logout
+            </a>
 
-    <a href="{% url 'login' %}">Login</a>
-{% endif %}
+            <a href="{% url 'profile' %}" 
+               style="background-color: #1E90FF; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+               Profile
+            </a>
 
-<hr>
+            <a href="{% url 'settings' %}" 
+               style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+               Settings
+            </a>
+        </div>
+
+    {% else %}
+        <!-- Guest User Button -->
+        <a href="{% url 'login' %}" 
+           style="display: inline-block; background-color: #1E90FF; color: white; padding: 10px 25px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+           Login
+        </a>
+    {% endif %}
+</div>
+
+<hr style="border-color: white; width: 80%; margin: 40px auto;">
