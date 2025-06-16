@@ -2,58 +2,58 @@
 
 {% block content %}
 
-{% if page == 'login' %}
+<div style="max-width: 500px; margin: 50px auto; background-color: #f1f1f1; padding: 40px 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: left;">
 
-<div>
+    {% if page == 'login' %}
+    <h2 style="text-align: center; color: #1E90FF;">Log In</h2>
     <form method="POST" action="">
         {% csrf_token %}
         
-        <label for="username">Username:</label>
-        <input type="text" name="username" id="username" placeholder="Enter Username" autofocus />
+        <label for="username" style="display: block; margin-top: 15px; font-weight: bold;">Username</label>
+        <input type="text" name="username" id="username" placeholder="Enter Username" autofocus 
+               style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #ccc;">
 
-        <label for="password">Password:</label>
-        <input type="password" name="password" placeholder="Enter Password" id="password-input" />
+        <label for="password-input" style="display: block; margin-top: 15px; font-weight: bold;">Password</label>
+        <input type="password" name="password" id="password-input" placeholder="Enter Password"
+               style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #ccc;">
 
-        <label>
+        <label style="display: block; margin-top: 10px;">
             <input type="checkbox" onclick="togglePassword()"> Show Password
         </label>
 
         <script>
         function togglePassword() {
             var x = document.getElementById("password-input");
-            if (x.type === "password") {
-                x.type = "text";
-            } else {
-                x.type = "password";
-            }
+            x.type = (x.type === "password") ? "text" : "password";
         }
         </script>
 
-        <input type="submit" value="Login" />
+        <input type="submit" value="Login"
+               style="width: 100%; background-color: #1E90FF; color: white; padding: 12px; margin-top: 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
     </form>
 
-    <p>Haven't registered yet?</p>
-    <a href="{% url 'register' %}">Register</a>
+    <p style="text-align: center; margin-top: 20px;">Haven't registered yet? 
+        <a href="{% url 'register' %}" style="color: #1E90FF; font-weight: bold;">Register</a>
+    </p>
 
-</div>
-
-{% elif page == 'register' %}
-
-<div>
-    <form method="POST", action="">
+    {% elif page == 'register' %}
+    <h2 style="text-align: center; color: #28a745;">Register</h2>
+    <form method="POST" action="">
         {% csrf_token %}
-        
-        {{form.as_p}}
+        {{ form.as_p }}
 
-        <input type="submit" value="Register" />
+        <input type="submit" value="Register"
+               style="width: 100%; background-color: #28a745; color: white; padding: 12px; margin-top: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
     </form>
-    <p>Already registered?</p>
-    <a href="{% url 'login' %}">Login</a>
 
+    <p style="text-align: center; margin-top: 20px;">Already registered? 
+        <a href="{% url 'login' %}" style="color: #1E90FF; font-weight: bold;">Login</a>
+    </p>
+    {% endif %}
+
+    <p style="text-align: center; margin-top: 25px;">
+        <a href="{% url 'password_reset' %}" style="color: #ff5733; font-weight: bold;">Forgot your password?</a>
+    </p>
 </div>
-
-{% endif %}
-
-<a href="{% url 'password_reset' %}">Forgot your password?</a>
 
 {% endblock content %}
