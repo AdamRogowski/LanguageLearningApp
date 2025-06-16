@@ -1,14 +1,34 @@
 {% extends "main.html" %}
 {% block content %}
-<h2>User Settings</h2>
-<form method="post">
+
+<div style="max-width: 600px; margin: 50px auto; padding: 30px; background-color: #f9f9f9; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+
+  <h2 style="text-align: center; color: #1E90FF; margin-bottom: 25px;">⚙️ User Settings</h2>
+
+  <form method="post">
     {% csrf_token %}
-    <h3>Account Info</h3>
-    {{ user_form.as_p }}
-    <h3>Preferences</h3>
-    {{ profile_form.as_p }}
-    <button type="submit">Save Changes</button>
-</form>
-<a href="{% url 'password_change' %}"><button>Change Password</button></a>
-<a href="{% url 'profile' %}"><button>Back to Profile</button></a>
+
+    <h3 style="color: #333; margin-bottom: 10px;">👤 Account Info</h3>
+    <div style="margin-bottom: 20px;">
+      {{ user_form.as_p }}
+    </div>
+
+    <h3 style="color: #333; margin-bottom: 10px;">🛠️ Preferences</h3>
+    <div style="margin-bottom: 25px;">
+      {{ profile_form.as_p }}
+    </div>
+
+    <button type="submit" style="background-color: #1E90FF; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer;">
+      💾 Save Changes
+    </button>
+  </form>
+
+  <div style="margin-top: 30px; text-align: center;">
+    <a href="{% url 'password_change' %}" style="margin-right: 10px; background-color: #ffa500; color: white; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-weight: bold;">🔒 Change Password</a>
+
+    <a href="{% url 'profile' %}" style="background-color: #6c757d; color: white; padding: 8px 16px; border-radius: 5px; text-decoration: none; font-weight: bold;">⬅️ Back to Profile</a>
+  </div>
+
+</div>
+
 {% endblock content %}
