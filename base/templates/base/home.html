@@ -2,17 +2,78 @@
 
 {% block content %}
 
-<h1>Home Template</h1>
-
+<header style="background-color:rgb(90, 30, 255); padding: 30px 0; text-align: center;">
+    <h1 style="
+      color: white;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 36px;
+      font-weight: 600;
+      margin: 0;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    ">
+    Learn. Speak. Connect.
+    </h1>
+  </header>
+  <style>
+    .logout-btn {
+      display: inline-block;
+      background-color: #1E90FF;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      font-family: Arial, sans-serif;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+      margin-top: 10px;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+  
+    .logout-btn:hover {
+      background-color: #0066cc;
+      transform: scale(1.05);
+    }
+  </style>
+  
 
 {% if user.is_authenticated %}
-    <a href="{% url 'my-lessons' user.id %}">My Lessons</a>
-{% else %}
 
-    <a href="{% url 'login' %}">My Lessons</a>
+
+<a href="{% url 'my-lessons' user.id %}"class="logout-btn">📘 My Lessons</a>
+ 
+
+
+
+{% else %}
+<style>
+  .logout-btn {
+    display: inline-block;
+    background-color: #1E90FF;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    margin-top: 10px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+
+  .logout-btn:hover {
+    background-color: #0066cc;
+    transform: scale(1.05);
+  }
+</style>
+
+<a href="{% url 'login' %}" class="logout-btn">
+    <span style="color: yellow;">📘</span> My Lessons
+  </a>
+
 {% endif %}
 
-<a href="{% url 'lessons-repository' %}">Lessons Repository</a>
+<a href="{% url 'lessons-repository' %}" class="logout-btn">📚 Lessons Repository</a>
+
 
 <style>
     .home-container {
