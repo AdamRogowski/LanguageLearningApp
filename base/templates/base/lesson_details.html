@@ -2,59 +2,109 @@
 
 {% block content %}
 
-<h1><a href="{% url 'lessons-repository' %}">Lessons Repository</a></h1>
-<h2><a href="{% url 'lesson-details' lesson.id %}">{{ lesson.title }}</a></h2>
+<!-- Page Title -->
+<h1 style="text-align:center; margin-bottom: 20px;">
+  <a href="{% url 'lessons-repository' %}" 
+     style="text-decoration: none; color: #1E90FF; font-size: 32px; font-weight: bold;">
+    📚 Lessons Repository
+  </a>
+</h1>
+
+<!-- Lesson Title -->
+<h2 style="text-align:center; margin-bottom: 10px;">
+  <a href="{% url 'lesson-details' lesson.id %}" 
+     style="text-decoration: none; color: white; transition: color 0.3s ease;">
+    {{ lesson.title }}
+  </a>
+</h2>
+
+<!-- Original Lesson Info -->
 {% if lesson.original_lesson %}
-    {% if lesson.original_lesson.access_type.name == "private" %}
-        <h3>Original Lesson: {{ lesson.original_lesson.title }} (private)</h3>
-    {% else %}
-        <h3>Original Lesson: <a href="{% url 'lesson-details' lesson.original_lesson.id %}">{{ lesson.original_lesson.title }}</a></h3>
-    {% endif %}
+  {% if lesson.original_lesson.access_type.name == "private" %}
+    <h3 style="text-align:center; color: #ccc;">🔒 Original Lesson: {{ lesson.original_lesson.title }} (private)</h3>
+  {% else %}
+    <h3 style="text-align:center;">
+      🔁 Original Lesson: 
+      <a href="{% url 'lesson-details' lesson.original_lesson.id %}" 
+         style="color: #00c3ff; text-decoration: none;">
+        {{ lesson.original_lesson.title }}
+      </a>
+    </h3>
+  {% endif %}
 {% endif %}
 
-published by {{ lesson.author.userprofile.display_name }}
-<br>
-access rights: {{lesson.access_type.name}}
-<br>
-prompt language: {{lesson.prompt_language.name}}
-<br>
-translation language: {{lesson.translation_language.name}}
-<br>
-published on {{ lesson.created }}
-<br>
-last updated on {{ lesson.updated }}
-<br>
-rating {{ average_rating }} ({{ rating_count }} ratings)
+<!-- Lesson Info Box -->
+<div style="background-color: rgba(255,255,255,0.05); padding: 20px; margin: 30px auto; width: 90%; max-width: 700px; border-radius: 10px; color: white; font-size: 16px;">
+  <p>👤 <strong>Published by:</strong> {{ lesson.author.userprofile.display_name }}</p>
+  <p>🔐 <strong>Access Rights:</strong> {{ lesson.access_type.name }}</p>
+  <p>🗣️ <strong>Prompt Language:</strong> {{ lesson.prompt_language.name }}</p>
+  <p>📝 <strong>Translation Language:</strong> {{ lesson.translation_language.name }}</p>
+  <p>📅 <strong>Published On:</strong> {{ lesson.created }}</p>
+  <p>🕒 <strong>Last Updated:</strong> {{ lesson.updated }}</p>
+  <p>⭐ <strong>Rating:</strong> {{ average_rating }} ({{ rating_count }} ratings)</p>
 
-<form action="{% url 'rate-lesson' lesson.id %}" method="get" style="display:inline;">
-    <button type="submit">Rate lesson</button>
-</form>
-<br>
-last updated on {{ lesson.updated }}
-<br>
+  <!-- Rate Button -->
+  <form action="{% url 'rate-lesson' lesson.id %}" method="get" style="margin-top: 15px;">
+    <button style="padding: 10px 20px; background-color: #1E90FF; color: white; border: none; border-radius: 6px; cursor: pointer;">
+      ⭐ Rate Lesson
+    </button>
+  </form>
+</div>
 
-<h5>{{ lesson.description }}</h5>
+<!-- Lesson Description -->
+<p style="color: #ddd; font-size: 18px; font-style: italic; margin: 20px auto; max-width: 700px;">
+  {{ lesson.description }}
+</p>
 
-<hr>
+<hr style="width: 80%; margin: 30px auto; border-color: #1e90ff;">
 
+<!-- Import Button (Only for Authenticated Users) -->
+{% if request.user.is_authenticated %}
+  <form action="{% url 'import-lesson' lesson.id %}" method="get" style="text-align: center; margin-bottom: 30px;">
+    <button {% if not can_import %}disabled{% endif %} 
+            style="padding: 10px 25px; background-color: #28a745; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+      📥 Import Lesson
+    </button>
+  </form>
+{% endif %}
 
- 
+<!-- Word List Box Style -->
+<style>
+  .word-box {
+    background-color: rgba(255, 255, 255, 0.06);
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin: 10px auto;
+    width: 80%;
+    max-width: 600px;
+    transition: transform 0.2s ease, background-color 0.3s ease;
+    text-align: center;
+  }
 
-<div class="lesson-container">
+  .word-box:hover {
+    background-color: rgba(30, 144, 255, 0.2);
+    transform: scale(1.02);
+  }
 
-    {% if request.user.is_authenticated %}
-        <form action="{% url 'import-lesson' lesson.id %}" method="get">
-            <button type="submit" {% if not can_import %}disabled{% endif %}  >Import Lesson</button>
-        </form>
-    {% endif %}
+  .word-box a {
+    text-decoration: none;
+    color: #00c3ff;
+    font-size: 18px;
+    font-weight: bold;
+  }
+</style>
 
-
-    {% for word in words %}
-        <div>
-            <a href="{% url 'word-details' lesson.id word.prompt %}">{{ word.prompt }} -> {{ word.translation }}</a>
-        </div>    
-    {% endfor %}
-
-</div>  
+<!-- Word List Section -->
+<div class="lesson-container" style="text-align: center;">
+  {% for word in words %}
+    <div class="word-box">
+      <a href="{% url 'word-details' lesson.id word.prompt %}">
+        📘 {{ word.prompt }} → {{ word.translation }}
+      </a>
+    </div>
+  {% empty %}
+    <p style="color: white;">No words available for this lesson.</p>
+  {% endfor %}
+</div>
 
 {% endblock content %}

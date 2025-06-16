@@ -2,27 +2,62 @@
 
 {% block content %}
 
-<h1><a href="{% url 'lessons-repository' %}">Lessons Repository</a></h1>
+<!-- Page Title -->
+<h1 style="color: white; font-size: 32px; margin-bottom: 20px;">
+  <a href="{% url 'lessons-repository' %}" 
+     style="text-decoration: none; color: #1E90FF;">
+    📚 Lessons Repository
+  </a>
+</h1>
 
-<form method="GET" action="{% url 'lessons-repository' %}">
-    <input type="text" name="q" placeholder="Search...">
-    <button type="submit">Search</button>
+<!-- Search Form -->
+<form method="GET" action="{% url 'lessons-repository' %}" 
+      style="margin-bottom: 30px; display: flex; justify-content: center;">
+  <input type="text" name="q" placeholder="Search lessons..." 
+         style="padding: 10px; width: 250px; border-radius: 6px; border: none; margin-right: 10px;">
+  <button type="submit" 
+          style="padding: 10px 20px; background-color: #1E90FF; color: white; border: none; border-radius: 6px; cursor: pointer;">
+    🔍 Search
+  </button>
 </form>
 
- 
+<!-- Hover Style -->
+<style>
+  .lesson-box {
+    background-color: #ffffff10;
+    padding: 15px 20px;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 600px;
+    transition: transform 0.2s ease, background-color 0.3s ease;
+  }
 
-<div class="lessons-repository-container">
+  .lesson-box:hover {
+    background-color: #1e90ff30;
+    transform: scale(1.02);
+  }
 
-    <div>
-    {% for lesson in public_lessons %}
-        <div>
-            <a href="{% url 'lesson-details' lesson.id %}">{{ lesson.title }}</a>
-        </div>    
-    {% endfor %}
+  .lesson-box a {
+    text-decoration: none;
+    color: #00c3ff;
+    font-size: 18px;
+    font-weight: bold;
+    display: block;
+  }
+</style>
 
-</div> 
+<!-- Lessons List -->
+<div class="lessons-repository-container" 
+     style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+
+  {% for lesson in public_lessons %}
+    <div class="lesson-box">
+      <a href="{% url 'lesson-details' lesson.id %}">📖 {{ lesson.title }}</a>
+    </div>
+  {% empty %}
+    <p style="color: white;">No lessons found.</p>
+  {% endfor %}
 
 </div>
-
 
 {% endblock content %}

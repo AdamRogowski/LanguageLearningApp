@@ -1,45 +1,65 @@
 {% extends "main.html" %}
-
 {% block content %}
 
-<h1><a href="{% url 'my-lessons' my_word.user_lesson.user.id %}">{{my_word.user_lesson.user.username}}'s lessons</a></h1>
+<!-- Navigation Header -->
+<h1 style="text-align: center;">
+  <a href="{% url 'my-lessons' my_word.user_lesson.user.id %}" 
+     style="text-decoration: none; color: #1E90FF;"
+     onmouseover="this.style.color='#63b3ed';"
+     onmouseout="this.style.color='#1E90FF';">
+    {{ my_word.user_lesson.user.username }}'s Lessons
+  </a>
+</h1>
 
-<h2><a href="{% url 'my-lesson-details' my_word.user_lesson.id %}">{{ my_word.user_lesson.lesson.title }}</a></h2>
-{{ my_lesson.lesson.access_type.name}}
+<h2 style="text-align: center;">
+  <a href="{% url 'my-lesson-details' my_word.user_lesson.id %}" 
+     style="text-decoration: none; color: #87CEFA;"
+     onmouseover="this.style.color='#a8d1ff';"
+     onmouseout="this.style.color='#87CEFA';">
+    {{ my_word.user_lesson.lesson.title }}
+  </a>
+</h2>
 
-<h5>Lesson description: {{ my_word.user_lesson.lesson.description }}</h5>
+<!-- Lesson Info -->
+<div style="color: white; text-align: center; margin-bottom: 30px;">
+  <p><strong>Access:</strong> {{ my_word.user_lesson.lesson.access_type.name }}</p>
+  <p><strong>Description:</strong> {{ my_word.user_lesson.lesson.description }}</p>
+  <p><strong>Target Progress:</strong> {{ my_word.user_lesson.target_progress }}</p>
+</div>
 
-<h5>Target progress: {{ my_word.user_lesson.target_progress }}</h5>
+<!-- Word Details Box -->
+<div class="my-word-container" style="background-color: rgba(255,255,255,0.05); padding: 25px; border-radius: 8px; max-width: 600px; margin: 0 auto; color: white;">
 
+  <p><strong>Prompt:</strong><br>
+    {% if my_word.word.prompt_audio %}
+      <audio id="prompt_audio" src="{{ my_word.word.prompt_audio.url }}?v={{ my_word.word.updated|date:'U' }}"></audio>
+      <button type="button" onclick="document.getElementById('prompt_audio').play()" class="logout-btn" style="margin-top: 5px;">
+        {{ my_word.word.prompt }} 🔊
+      </button>
+    {% else %}
+      {{ my_word.word.prompt }} (no audio available)
+    {% endif %}
+  </p>
 
- 
+  <p><strong>Translation:</strong><br>{{ my_word.word.translation }}</p>
 
-<div class="my-word-container">
-    <div>
-        <h5>Prompt:  
-        {% if my_word.word.prompt_audio %}
-            <audio id="prompt_audio" src="{{ my_word.word.prompt_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
-            <button type="button" onclick="document.getElementById('prompt_audio').play()">{{ my_word.word.prompt }} 🔊</button>
-        {% else %}
-            {{ my_word.word.prompt }} (no audio available)
-        {% endif %}
-        </h5>
-        <h5>Translation: {{ my_word.word.translation }} </h5>
-        <h5>Usage: 
-        {% if my_word.word.usage_audio %}
-            <audio id="usage_audio" src="{{ my_word.word.usage_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
-            <button type="button" onclick="document.getElementById('usage_audio').play()">{{ my_word.word.usage }} 🔊</button>
-        {% else %}
-            {{ my_word.word.usage }} (no audio available)
-        {% endif %}
-        </h5>
-        <h5>Hint: {{ my_word.word.hint }} </h5>
-        <h5>Created: {{ my_word.word.created }} </h5>
-        <h5>Last updated: {{ my_word.word.updated }} </h5>
-        <h5>Current Progress: {{ my_word.current_progress }} </h5>
-        <h5>Notes: {{ my_word.notes }} </h5>
-    </div>    
+  <p><strong>Usage:</strong><br>
+    {% if my_word.word.usage_audio %}
+      <audio id="usage_audio" src="{{ my_word.word.usage_audio.url }}?v={{ my_word.word.updated|date:'U' }}"></audio>
+      <button type="button" onclick="document.getElementById('usage_audio').play()" class="logout-btn" style="margin-top: 5px;">
+        {{ my_word.word.usage }} 🔊
+      </button>
+    {% else %}
+      {{ my_word.word.usage }} (no audio available)
+    {% endif %}
+  </p>
 
-</div>  
+  <p><strong>Hint:</strong><br>{{ my_word.word.hint }}</p>
+  <p><strong>Created:</strong> {{ my_word.word.created }}</p>
+  <p><strong>Last Updated:</strong> {{ my_word.word.updated }}</p>
+  <p><strong>Current Progress:</strong> {{ my_word.current_progress }}</p>
+  <p><strong>Notes:</strong><br>{{ my_word.notes }}</p>
+
+</div>
 
 {% endblock content %}

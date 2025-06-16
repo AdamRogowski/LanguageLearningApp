@@ -2,15 +2,45 @@
 
 {% block content %}
 
-<h1><a href="{% url 'my-lessons' my_word.user_lesson.user.id %}">{{my_word.user_lesson.user.username}}'s lessons</a></h1>
-<h2><a href="{% url 'my-lesson-details' my_word.user_lesson.id %}">{{ my_word.user_lesson.lesson.title }}</a></h2>
+<!-- Page Titles with Hover Links -->
+<h1 style="text-align: center;">
+  <a href="{% url 'my-lessons' my_word.user_lesson.user.id %}"
+     style="text-decoration: none; color: #1E90FF;"
+     onmouseover="this.style.color='#63b3ed';"
+     onmouseout="this.style.color='#1E90FF';">
+    {{ my_word.user_lesson.user.username }}'s Lessons
+  </a>
+</h1>
 
-<form method="POST" action="">
+<h2 style="text-align: center;">
+  <a href="{% url 'my-lesson-details' my_word.user_lesson.id %}"
+     style="text-decoration: none; color: #87CEFA;"
+     onmouseover="this.style.color='#a8d1ff';"
+     onmouseout="this.style.color='#87CEFA';">
+    {{ my_word.user_lesson.lesson.title }}
+  </a>
+</h2>
+
+<!-- Form Container -->
+<div style="background-color: rgba(255, 255, 255, 0.05); padding: 30px; max-width: 600px; margin: 30px auto; border-radius: 10px; color: white;">
+
+  <form method="POST" action="">
     {% csrf_token %}
     {{ edit_word_form.as_p }}
-    <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'" style="display:inline;">Cancel</button>
-    <input type="submit" value="Submit" />
-    <a href="{% url 'delete-word' my_word.id %}" style="display:inline;" class="button" style="color:red;">Delete</a>
-</form>
+
+    <div style="text-align: center; margin-top: 20px;">
+      <input type="submit" value="💾 Save Changes" class="logout-btn" />
+      <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'" class="logout-btn" style="background-color: #555;">
+        ❌ Cancel
+      </button>
+      <a href="{% url 'delete-word' my_word.id %}">
+        <button type="button" class="logout-btn" style="background-color: #aa0000;">
+          🗑️ Delete
+        </button>
+      </a>
+    </div>
+  </form>
+
+</div>
 
 {% endblock content %}

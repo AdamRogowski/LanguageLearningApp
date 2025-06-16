@@ -1,14 +1,21 @@
 {% extends "main.html" %}
 {% load static %}
+
 {% block content %}
-<h2>Generating Audio Files</h2>
-<div id="loading-animation" style="text-align:center;">
-    <img src="{% static 'images/loading.gif' %}" alt="Loading..." style="width:64px;height:64px;">
-    <p>Please wait while audio files are being generated for all words in this lesson...</p>
+<div style="text-align: center; margin-top: 60px; color: white;">
+    <h2 style="font-size: 28px; margin-bottom: 20px;">🔊 Generating Audio Files</h2>
+    <div id="loading-animation">
+        <img src="{% static 'images/loading.gif' %}" alt="Loading..." style="width:64px;height:64px;">
+        <p style="margin-top: 16px; font-size: 18px;">
+            Please wait while audio files are being generated for all words in this lesson...
+        </p>
+    </div>
+
+    <form id="generate-audio-form" method="post" action="{% url 'generate-lesson-audio' my_lesson.id %}">
+        {% csrf_token %}
+    </form>
 </div>
-<form id="generate-audio-form" method="post" action="{% url 'generate-lesson-audio' my_lesson.id %}">
-    {% csrf_token %}
-</form>
+
 <script>
     window.onload = function() {
         document.getElementById('generate-audio-form').submit();

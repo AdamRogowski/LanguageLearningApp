@@ -1,20 +1,121 @@
 {% extends "main.html" %}
 
 {% block content %}
+<div class="lesson-edit-container">
 
-<h1><a href="{% url 'my-lessons' my_lesson.user.id %}">{{my_lesson.user.username}}'s lessons</a></h1>
-<h2><a href="{% url 'my-lesson-details' my_lesson.id %}">{{ my_lesson.lesson.title }}</a></h2>
+  <h1 class="section-title">
+    <a href="{% url 'my-lessons' my_lesson.user.id %}" class="link-hover">
+      {{ my_lesson.user.username }}'s Lessons
+    </a>
+  </h1>
 
-<a href="{% url 'reset-progress' my_lesson.id %}"><button>Reset Progress</button></a>
-<a href="{% url 'generate-lesson-audio-start' my_lesson.id %}">
-    <button>Regenerate Audio for All Words</button>
-</a>
+  <h2 class="sub-title">
+    <a href="{% url 'my-lesson-details' my_lesson.id %}" class="link-hover">
+      {{ my_lesson.lesson.title }}
+    </a>
+  </h2>
 
-<form method="POST" action="">
+  <div class="button-group">
+    <a href="{% url 'reset-progress' my_lesson.id %}" class="btn danger-btn">🔄 Reset Progress</a>
+    <a href="{% url 'generate-lesson-audio-start' my_lesson.id %}" class="btn primary-btn">🔊 Regenerate Audio</a>
+  </div>
+
+  <form method="POST" action="" class="form-section">
     {% csrf_token %}
     {{ edit_user_lesson_form.as_p }}
-    <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'" style="display:inline;">Cancel</button>
-    <input type="submit" value="Submit" />
-</form>
+
+    <div class="button-group">
+      <button type="button" class="btn secondary-btn" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'">Cancel</button>
+      <input type="submit" class="btn primary-btn" value="✅ Submit" />
+    </div>
+  </form>
+
+</div>
+
+<style>
+  .lesson-edit-container {
+    max-width: 700px;
+    margin: 40px auto;
+    color: white;
+    text-align: center;
+  }
+
+  .section-title, .sub-title {
+    margin-bottom: 20px;
+  }
+
+  .link-hover {
+    color: #1E90FF;
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+
+  .link-hover:hover {
+    color: #63b3ed;
+    text-decoration: underline;
+  }
+
+  .button-group {
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 10px 18px;
+    font-size: 15px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .primary-btn {
+    background-color: #1E90FF;
+    color: white;
+  }
+
+  .primary-btn:hover {
+    background-color: #187bcd;
+  }
+
+  .danger-btn {
+    background-color: #dc3545;
+    color: white;
+  }
+
+  .danger-btn:hover {
+    background-color: #c82333;
+  }
+
+  .secondary-btn {
+    background-color: #6c757d;
+    color: white;
+  }
+
+  .secondary-btn:hover {
+    background-color: #5a6268;
+  }
+
+  .form-section {
+    margin-top: 30px;
+    text-align: left;
+  }
+
+  .form-section input[type="text"],
+  .form-section select,
+  .form-section textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 4px;
+    border: none;
+    margin-bottom: 15px;
+    font-size: 16px;
+  }
+</style>
 
 {% endblock content %}

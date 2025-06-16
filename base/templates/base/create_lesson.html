@@ -1,15 +1,36 @@
 {% extends 'main.html' %}
 
 {% block content %}
-<h2>Create a New Lesson</h2>
+<h2 style="color: white; font-size: 28px; margin-bottom: 20px;">
+  Create a New Lesson
+</h2>
 
-<a href="{% url 'import-lesson-json' %}"><button>Import JSON</button></a>
+<div style="margin-bottom: 20px;">
+  <a href="{% url 'import-lesson-json' %}" style="text-decoration: none;">
+    <button style="background-color: #1E90FF; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+      📥 Import JSON
+    </button>
+  </a>
+</div>
 
-<form method="post">
-  {% csrf_token %}
-  {{ lesson_form.as_p }}
-  <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'" style="display:inline;">Cancel</button>
-  <button type="submit">Create Lesson</button>
-</form>   
+<div style="background-color: #06263A; padding: 30px; border-radius: 12px; max-width: 700px; margin: 30px auto; color: white;">
+  <form method="post">
+    {% csrf_token %}
+    {{ lesson_form.as_p }}
+
+    <div style="margin-top: 20px;">
+      <button type="submit" style="background-color: #1E90FF; color: white; padding: 10px 20px; border: none; border-radius: 6px;">
+        ✅ Create Lesson
+      </button>
+
+      <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'"
+              style="background-color: #888; color: white; padding: 10px 20px; border: none; border-radius: 6px; margin-left: 10px;">
+        ❌ Cancel
+      </button>
+    </div>
+  </form>
+</div>
+
+
 
 {% endblock content %}

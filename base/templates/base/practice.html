@@ -1,68 +1,134 @@
 {% extends "main.html" %}
 {% block content %}
-<h2>
-    {% if mode == "reverse" %}
-        Reverse Practice Mode
-    {% else %}
-        Practice Mode
-    {% endif %}
-</h2>
-<p>
-    {% if mode == "reverse" %}
-        Translate: <strong>{{ question }}</strong>
-    {% else %}
-        What is the prompt for: <strong>{{ question }}</strong>
-    {% endif %}
-</p>
-<form method="post">
-    {% csrf_token %}
-    <input type="text" name="answer" autocomplete="off" autofocus>
-    <button type="submit">Submit</button>
-</form>
 
-<form method="get" action="{% url 'edit-word' user_word.id %}" style="display:inline;">
+<div style="max-width: 600px; margin: 40px auto; color: white; text-align: center;">
+
+  <h2 style="font-size: 28px; color: #1E90FF;">
+    {% if mode == "reverse" %}
+      🔄 Reverse Practice Mode
+    {% else %}
+      📝 Practice Mode
+    {% endif %}
+  </h2>
+
+  <p style="margin-top: 20px; font-size: 18px;">
+    {% if mode == "reverse" %}
+      Translate: <strong>{{ question }}</strong>
+    {% else %}
+      What is the prompt for: <strong>{{ question }}</strong>
+    {% endif %}
+  </p>
+
+  <form method="post" style="margin-top: 25px;">
+    {% csrf_token %}
+    <input type="text" name="answer" autocomplete="off" autofocus 
+           placeholder="Type your answer..."
+           style="padding: 10px; width: 80%; border-radius: 6px; border: none; font-size: 16px;">
+    <br><br>
+    <button type="submit" class="primary-button">✅ Submit</button>
+  </form>
+
+  <form method="get" action="{% url 'edit-word' user_word.id %}" style="margin-top: 15px;">
     <input type="hidden" name="next" value="{% url 'practice' user_lesson_id=user_lesson_id mode=mode %}">
-    <button type="submit">Edit This Word</button>
-</form>
+    <button type="submit" class="secondary-button">✏️ Edit This Word</button>
+  </form>
 
-<!-- Rollout for hint and notes -->
-<div>
-    <button type="button" onclick="toggleRollout('hint')">Show/Hide Hint</button>
-    <div id="hint" style="display:none; margin-bottom:1em;">
-        <em>{{ user_word.word.hint|default:"No hint available." }}</em>
+  <div style="margin-top: 30px;">
+    <button type="button" onclick="toggleRollout('hint')" class="toggle-button">💡 Show/Hide Hint</button>
+    <div id="hint" style="display:none; margin-top: 10px;">
+      <em>{{ user_word.word.hint|default:"No hint available." }}</em>
     </div>
-</div>
-<div>
-    <button type="button" onclick="toggleRollout('usage')">Show/Hide Usage</button>
-    <div id="usage" style="display:none; margin-bottom:1em;">
-        <em>{{ user_word.word.usage|default:"No usage example available." }}</em>
-        {% if user_word.word.usage_audio %}
-            <audio id="usage_audio" src="{{ user_word.word.usage_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
-            <button type="button" onclick="document.getElementById('usage_audio').play()">🔊 Listen to usage</button>
-        {% endif %}
-    </div>
-</div>
-<div>
-    <button type="button" onclick="toggleRollout('notes')">Show/Hide Notes</button>
-    <div id="notes" style="display:none;">
-        <em>{{ user_word.notes|default:"No notes available." }}</em>
-    </div>
-</div>
 
-<form method="post" action="{% url 'cancel-practice' user_lesson_id=user_lesson_id %}">
+    <br><br>
+
+    <button type="button" onclick="toggleRollout('usage')" class="toggle-button">🗣️ Show/Hide Usage</button>
+    <div id="usage" style="display:none; margin-top: 10px;">
+      <em>{{ user_word.word.usage|default:"No usage example available." }}</em>
+      {% if user_word.word.usage_audio %}
+        <br><br>
+        <audio id="usage_audio" src="{{ user_word.word.usage_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
+        <button type="button" onclick="document.getElementById('usage_audio').play()" class="audio-button">🔊 Listen to Usage</button>
+      {% endif %}
+    </div>
+
+    <br><br>
+
+    <button type="button" onclick="toggleRollout('notes')" class="toggle-button">📝 Show/Hide Notes</button>
+    <div id="notes" style="display:none; margin-top: 10px;">
+      <em>{{ user_word.notes|default:"No notes available." }}</em>
+    </div>
+  </div>
+
+  <form method="post" action="{% url 'cancel-practice' user_lesson_id=user_lesson_id %}" style="margin-top: 30px;">
     {% csrf_token %}
-    <button type="submit">Cancel Practice</button>
-</form>
+    <button type="submit" class="danger-button">❌ Cancel Practice</button>
+  </form>
+
+</div>
 
 <script>
 function toggleRollout(id) {
-    var el = document.getElementById(id);
-    if (el.style.display === "none") {
-        el.style.display = "block";
-    } else {
-        el.style.display = "none";
-    }
+  var el = document.getElementById(id);
+  el.style.display = (el.style.display === "none") ? "block" : "none";
 }
 </script>
+
+<style>
+  .primary-button, .secondary-button, .toggle-button, .audio-button, .danger-button {
+    padding: 10px 20px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  .primary-button {
+    background-color: #1E90FF;
+    color: white;
+  }
+
+  .primary-button:hover {
+    background-color: #187bcd;
+  }
+
+  .secondary-button {
+    background-color: #444;
+    color: #fff;
+  }
+
+  .secondary-button:hover {
+    background-color: #555;
+  }
+
+  .toggle-button {
+    background-color: #333;
+    color: #fff;
+    width: 80%;
+  }
+
+  .toggle-button:hover {
+    background-color: #555;
+  }
+
+  .audio-button {
+    background-color: #666;
+    color: white;
+  }
+
+  .audio-button:hover {
+    background-color: #888;
+  }
+
+  .danger-button {
+    background-color: #dc3545;
+    color: white;
+  }
+
+  .danger-button:hover {
+    background-color: #c82333;
+  }
+</style>
 
 {% endblock content %}

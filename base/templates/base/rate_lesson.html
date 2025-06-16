@@ -2,14 +2,32 @@
 
 {% block content %}
 
-<h1><a href="{% url 'lessons-repository' %}">Lessons Repository</a></h1>
-<h2><a href="{% url 'lesson-details' lesson.id %}">{{ lesson.title }}</a></h2>
+<h1 style="color: white; font-size: 32px; margin-bottom: 20px;">
+  <a href="{% url 'lessons-repository' %}" style="text-decoration: none; color: #1E90FF;">
+    Lessons Repository
+  </a>
+</h1>
 
-<form method="POST" action="">
+<h2 style="color: white; font-size: 24px; margin-bottom: 20px;">
+  <a href="{% url 'lesson-details' lesson.id %}" style="text-decoration: none; color: #87CEFA;">
+    {{ lesson.title }}
+  </a>
+</h2>
+
+<div style="max-width: 500px; margin: 0 auto; padding: 20px; background-color:rgb(255, 255, 255); border-radius: 10px;">
+  <form method="POST" action="">
     {% csrf_token %}
     {{ rate_lesson_form.as_p }}
-    <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'" style="display:inline;">Cancel</button>
-    <input type="submit" value="Submit" />
-</form>
+
+    <div style="margin-top: 20px;">
+      <button type="submit" style="background-color: #1E90FF; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+        Submit
+      </button>
+      <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'" style="background-color: #aaa; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>
 
 {% endblock content %}
