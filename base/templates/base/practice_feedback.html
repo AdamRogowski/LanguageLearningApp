@@ -1,87 +1,86 @@
 {% extends "main.html" %}
+
 {% block content %}
-<h2>
+
+<h2 style="color: white;">
     {% if mode == "reverse" %}
-        Reverse Practice Feedback
+        🔁 Reverse Practice Feedback
     {% else %}
-        Practice Feedback
+        🧠 Practice Feedback
     {% endif %}
 </h2>
 
 {% if user_word.word.prompt_audio %}
     <audio id="prompt_audio" src="{{ user_word.word.prompt_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
     <script>
-        window.onload = function() {
-            var audio = document.getElementById('prompt_audio');
-            if (audio) {
-                audio.play();
-            }
-        }
+        window.onload = function () {
+            document.getElementById('prompt_audio')?.play();
+        };
     </script>
 {% endif %}
 
-{% if correct %}
-    <div style="color: green;"><strong>Correct!</strong></div>
-    {% if lev_distance > 0 %}
-        <div>
-            Your answer: <code>{{ answer }}</code><br>
-            Correct answer: <code>{{ diff_html|safe }}</code><br>
-        </div>
-    {% endif %}
-    <form method="post" style="display:inline;">
-        {% csrf_token %}
-        <button type="submit" autofocus>Continue</button>
-    </form>
-{% else %}
-    <div style="color: red;">
-        <strong>Incorrect!</strong><br>
-        Your answer: <code>{{ answer }}</code><br>
-        Difference: <code>{{ diff_html|safe }}</code><br>
+<div style="background-color: #001f3f; padding: 20px; border-radius: 10px; margin-bottom: 20px; color: white;">
+    {% if correct %}
+        <h3 style="color: #00FF00;">✅ Correct!</h3>
+        {% if lev_distance > 0 %}
+            <p>Your answer: <code>{{ answer }}</code></p>
+            <p>Correct answer: <code>{{ diff_html|safe }}</code></p>
+        {% endif %}
         <form method="post" style="display:inline;">
             {% csrf_token %}
-            <button type="submit" name="accept_as_correct" value="1">Accept my answer as correct</button>
             <button type="submit" autofocus>Continue</button>
         </form>
-    </div>
-{% endif %}
+    {% else %}
+        <h3 style="color: #FF4136;">❌ Incorrect!</h3>
+        <p>Your answer: <code>{{ answer }}</code></p>
+        <p>Difference: <code>{{ diff_html|safe }}</code></p>
+        <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" name="accept_as_correct" value="1">Accept as Correct</button>
+            <button type="submit" autofocus>Continue</button>
+        </form>
+    {% endif %}
+</div>
 
-<form method="get" action="{% url 'edit-word' user_word.id %}" style="display:inline;">
-    <input type="hidden" name="next" value="{% url 'practice-feedback' user_lesson_id=user_lesson_id mode=mode %}">
-    <button type="submit">Edit This Word</button>
-</form>
-<!-- Rollout for hint, usage, and notes -->
+<div style="margin-bottom: 20px;">
+    <form method="get" action="{% url 'edit-word' user_word.id %}" style="display:inline;">
+        <input type="hidden" name="next" value="{% url 'practice-feedback' user_lesson_id=user_lesson_id mode=mode %}">
+        <button type="submit">✏️ Edit This Word</button>
+    </form>
+</div>
+
+<!-- Toggle Sections -->
 <div>
-    <button type="button" onclick="toggleRollout('hint')">Show/Hide Hint</button>
-    <div id="hint" style="display:none; margin-bottom:1em;">
+    <button type="button" onclick="toggleRollout('hint')">💡 Hint</button>
+    <div id="hint" style="display:none; margin-bottom:1em; color: #ccc;">
         <em>{{ user_word.word.hint|default:"No hint available." }}</em>
     </div>
-</div>
-<div>
-    <button type="button" onclick="toggleRollout('usage')">Show/Hide Usage</button>
-    <div id="usage" style="display:none; margin-bottom:1em;">
-        <em>{{ user_word.word.usage|default:"No usage example available." }}</em>
+
+    <button type="button" onclick="toggleRollout('usage')">📖 Usage</button>
+    <div id="usage" style="display:none; margin-bottom:1em; color: #ccc;">
+        <em>{{ user_word.word.usage|default:"No usage available." }}</em>
         {% if user_word.word.usage_audio %}
+            <br>
             <audio id="usage_audio" src="{{ user_word.word.usage_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
-            <button type="button" onclick="document.getElementById('usage_audio').play()">🔊 Listen to usage</button>
+            <button type="button" onclick="document.getElementById('usage_audio').play()">🔊 Listen</button>
         {% endif %}
     </div>
-</div>
-<div>
-    <button type="button" onclick="toggleRollout('notes')">Show/Hide Notes</button>
-    <div id="notes" style="display:none;">
+
+    <button type="button" onclick="toggleRollout('notes')">📝 Notes</button>
+    <div id="notes" style="display:none; color: #ccc;">
         <em>{{ user_word.notes|default:"No notes available." }}</em>
     </div>
 </div>
 
-<form method="post" action="{% url 'cancel-practice' user_lesson_id=user_lesson_id %}">
+<form method="post" action="{% url 'cancel-practice' user_lesson_id=user_lesson_id %}" style="margin-top: 30px;">
     {% csrf_token %}
-    <button type="submit">Cancel Practice</button>
+    <button type="submit">⏹️ Cancel Practice</button>
 </form>
 
 <script>
 function toggleRollout(id) {
-    var el = document.getElementById(id);
-    if (el.style.display === "none") {
+    const el = document.getElementById(id);
+    if (el.style.display === "none" || el.style.display === "") {
         el.style.display = "block";
     } else {
         el.style.display = "none";
@@ -90,10 +89,20 @@ function toggleRollout(id) {
 </script>
 
 <style>
+code {
+    background: #111;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: Consolas, monospace;
+}
 .diff {
     background-color: #ffcccc;
     color: #a00;
     font-weight: bold;
 }
+button {
+    margin: 6px;
+}
 </style>
+
 {% endblock content %}

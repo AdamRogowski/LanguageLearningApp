@@ -1,20 +1,23 @@
 {% extends "main.html" %}
-{% block content %}
-<h2>Import Lesson from JSON</h2>
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <input type="file" name="json_file" accept=".json" required>
-    <button type="submit">Import</button>
-</form>
 
-<h3>Expected JSON Format Example:</h3>
-<pre style="background:#f8f8f8; border:1px solid #ccc; padding:1em; overflow:auto;">
+{% block content %}
+<div class="import-container">
+  <h2 class="page-title">📥 Import Lesson from JSON</h2>
+
+  <form method="post" enctype="multipart/form-data" class="import-form">
+    {% csrf_token %}
+    <input type="file" name="json_file" accept=".json" required class="file-input">
+    <button type="submit" class="btn primary-btn">Import</button>
+  </form>
+
+  <h3 class="example-title">Expected JSON Format Example:</h3>
+  <pre class="json-example">
 {
   "title": "Lesson Title",
   "description": "Description",
   "prompt_language": "English",
   "translation_language": "Polish",
-  "access_type": "private", //{"private", "readonly", or "write"}
+  "access_type": "private", // {"private", "readonly", or "write"}
   "words": [
     {
       "prompt": "prompt1",
@@ -28,8 +31,74 @@
       "usage": "Usage example for prompt2.",
       "hint": "hint for prompt2"
     }
-    // Add more words as needed
   ]
 }
-</pre>
+  </pre>
+</div>
+
+<style>
+  .import-container {
+    max-width: 700px;
+    margin: 40px auto;
+    text-align: center;
+    color: white;
+  }
+
+  .page-title {
+    font-size: 28px;
+    margin-bottom: 25px;
+    color: #1E90FF;
+  }
+
+  .import-form {
+    margin-bottom: 40px;
+  }
+
+  .file-input {
+    padding: 10px;
+    margin-bottom: 20px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #fff;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+
+  .btn {
+    padding: 10px 18px;
+    font-size: 15px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .primary-btn {
+    background-color: #1E90FF;
+    color: white;
+  }
+
+  .primary-btn:hover {
+    background-color: #187bcd;
+  }
+
+  .example-title {
+    margin-top: 40px;
+    font-size: 20px;
+    color: #63b3ed;
+  }
+
+  .json-example {
+    text-align: left;
+    background-color: #1f1f1f;
+    color: #f0f0f0;
+    padding: 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 14px;
+    border: 1px solid #444;
+  }
+</style>
+
 {% endblock content %}
