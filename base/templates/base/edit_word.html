@@ -1,149 +1,16 @@
 {% extends "main.html" %}
 
 {% block content %}
-<style>
-    .edit-word-container {
-      background-color: #f5f5f5;
-      padding: 30px;
-      border-radius: 10px;
-      width: 90%;
-      max-width: 700px;
-      margin: 40px auto;
-      font-family: 'Segoe UI', sans-serif;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-  
-    .edit-word-container h1,
-    .edit-word-container h2 {
-      text-align: center;
-      color: #1E90FF;
-      margin-bottom: 10px;
-    }
-  
-    .edit-word-container form {
-      margin-top: 25px;
-    }
-  
-    .edit-word-container label {
-      font-weight: bold;
-      display: block;
-      margin-bottom: 5px;
-      color: #333;
-    }
-  
-    .edit-word-container input[type="text"],
-    .edit-word-container textarea,
-    .edit-word-container select {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      margin-bottom: 20px;
-      font-size: 15px;
-    }
-  
-    .button-group {
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      flex-wrap: wrap;
-    }
-  
-    .button-group button,
-    .button-group input[type="submit"],
-    .button-group a {
-      background-color: #1E90FF;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 6px;
-      text-decoration: none;
-      font-weight: bold;
-      font-family: Arial, sans-serif;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-      transition: background-color 0.3s ease, transform 0.2s ease;
-    }
-  
-    .button-group button:hover,
-    .button-group input[type="submit"]:hover,
-    .button-group a:hover {
-      background-color: #0066cc;
-      transform: scale(1.05);
-    }
-  
-    .cancel-btn {
-      background-color: #888;
-    }
-  
-    .cancel-btn:hover {
-      background-color: #666;
-    }
-  
-    .delete-btn {
-      background-color: #dc3545;
-    }
-  
-    .delete-btn:hover {
-      background-color: #b52d3e;
-    }
-    .simple-title h1, .simple-title h2 {
-        font-family: 'Segoe UI', sans-serif;
-        text-align: center;
-        margin: 10px 0;
-      }
-    
-      .simple-title h1 a {
-        font-size: 28px;
-        color: #1E90FF;
-        text-decoration: none;
-        font-weight: 600;
-      }
-    
-      .simple-title h2 a {
 
-        font-size: 22px;
-        color: #333;
-        text-decoration: none;
-        font-weight: 500;
-      }
-    
-      .simple-title h1 a:hover,
-      .simple-title h2 a:hover {
-        text-decoration: underline;
-        color: #0066cc;
-      }
-  </style>
+<h1><a href="{% url 'my-lessons' my_word.user_lesson.user.id %}">{{my_word.user_lesson.user.username}}'s lessons</a></h1>
+<h2><a href="{% url 'my-lesson-details' my_word.user_lesson.id %}">{{ my_word.user_lesson.lesson.title }}</a></h2>
 
-
-
-
-
-
-
-  <div class="edit-word-container">
-    <div class="simple-title">
-        <h1>
-          <a href="{% url 'my-lessons' my_word.user_lesson.user.id %}">
-            {{ my_word.user_lesson.user.username }}'s Lessons
-          </a>
-        </h1>
-        <h2>
-          <a href="{% url 'my-lesson-details' my_word.user_lesson.id %}">
-            {{ my_word.user_lesson.lesson.title }}
-          </a>
-        </h2>
-      </div>
-  
-    <form method="POST" action="">
-      {% csrf_token %}
-      {{ edit_word_form.as_p }}
-  
-      <div class="button-group">
-        <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'" class="cancel-btn">Cancel</button>
-        <input type="submit" value="Submit" />
-        <a href="{% url 'delete-word' my_word.id %}" class="delete-btn">Delete</a>
-      </div>
-    </form>
-  </div>
+<form method="POST" action="">
+    {% csrf_token %}
+    {{ edit_word_form.as_p }}
+    <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'" style="display:inline;">Cancel</button>
+    <input type="submit" value="Submit" />
+    <a href="{% url 'delete-word' my_word.id %}" style="display:inline;" class="button" style="color:red;">Delete</a>
+</form>
 
 {% endblock content %}
