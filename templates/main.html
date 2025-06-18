@@ -1,12 +1,23 @@
 <!DOCTYPE html>
 {% load static %}
 <html>
+{% load pwa %}
+{% progressive_web_app_meta %}
+
 <head>
     <meta charset="UTF-8">
     <title>Language Learning App</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
     <link rel="stylesheet" type="text/css" media="screen" href="{% static 'styles/main.css' %}">
     <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register("{% static 'js/serviceworker.js' %}");
+        });
+      }
+    </script>
 </head>
 <body>
 
@@ -14,7 +25,6 @@
         <h1>Language Learning App</h1>
     
     {% include 'navbar.html' %}
-
 
     {% if messages %}
         <div id="popup-messages" class="popup-messages">
@@ -64,5 +74,5 @@
         <hr>
         <p>&copy; 2025 Language Learning App</p>
     </footer>
-
+</body>
 </html>
