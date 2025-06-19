@@ -60,4 +60,58 @@
 
 </div>
 
+<script>
+    {% if public_lessons %}
+        const lessons = [
+            {% for lesson in public_lessons %}
+                {
+                    id: "{{ lesson.id }}",
+                    title: `{{ lesson.title|escapejs }}`,
+                    url: "{% url 'lesson-details' lesson.id %}"
+                },
+            {% endfor %}
+        ];
+        localStorage.setItem('cached_lessons', JSON.stringify(lessons));
+    {% endif %}
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const searchForm = document.querySelector("form");
+        const input = document.querySelector("input[name='q']");
+        const resultsDiv = document.querySelector(".lessons-repository-container");
+
+        if (!navigator.onLine) {
+            const lessons = JSON.parse(localStorage.getItem('cached_lessons') || "[]");
+
+            searchForm.addEventListener("submit", function(e) {
+                e.preventDefault();
+                const query = input.value.toLowerCase();
+                const filtered = lessons.filter(lesson =>
+                    lesson.title.toLowerCase().includes(query)
+                );
+
+                resultsDiv.innerHTML = "";
+                if (filtered.length === 0) {
+                    resultsDiv.innerHTML = "<p style='color:white;'>No lessons found.</p>";
+                }
+
+                filtered.forEach(lesson => {
+                    const box = document.createElement("div");
+                    box.className = "lesson-box";
+                    box.innerHTML = `<a href="${lesson.url}">📖 ${lesson.title}</a>`;
+                    resultsDiv.appendChild(box);
+                });
+            });
+        }
+    });
+</script>
+<p id="offline-warning" style="text-align:center; color: orange; display:none;">
+  ⚠️ You are offline. Showing cached lessons only.
+</p>
+<script>
+    if (!navigator.onLine) {
+        document.getElementById("offline-warning").style.display = "block";
+    }
+</script>
+
 {% endblock content %}

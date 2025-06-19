@@ -4,6 +4,8 @@ const urlsToCache = [
   "/static/images/logo.png",
   "/static/images/favicon.ico",
   "/static/styles/main.css",
+  "/lessons/repository/",
+
   // Add more static assets as needed
 ];
 

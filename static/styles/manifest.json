@@ -3,13 +3,22 @@
   "short_name": "LangLearn",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "theme_color": "#1E90FF",
+  "description": "Practice vocabulary lessons even offline!",
   "icons": [
     {
       "src": "/static/images/icon-160x160.png",
       "sizes": "160x160",
       "type": "image/png"
+    },
+    {
+      "src": "/static/images/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
-  ]
+  ],
+  "scope": "/",
+  "lang": "en"
 }
