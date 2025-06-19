@@ -14,7 +14,6 @@ from pathlib import Path
 from decouple import config
 import os
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -41,10 +40,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "base.apps.BaseConfig",
-    "pwa",  # 🟢 এখানে লিখো
     "django.contrib.sites",
+    "pwa",
 ]
-
 SITE_ID = 1
 
 MIDDLEWARE = [
@@ -161,24 +159,40 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_SAVE_EVERY_REQUEST = True
 
 ALLOWED_HOSTS = ["*"]
-PWA_APP_NAME = 'Language Learning App'
-PWA_APP_DESCRIPTION = "Learn anytime, even offline"
-PWA_APP_THEME_COLOR = '#1E90FF'
-PWA_APP_BACKGROUND_COLOR = '#ffffff'
-PWA_APP_DISPLAY = 'standalone'
-PWA_APP_SCOPE = '/'
-PWA_APP_ORIENTATION = 'portrait'
-PWA_APP_START_URL = '/'
+
+# PWA settings
+PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, "static/js", "serviceworker.js")
+
+PWA_APP_NAME = "Language Learning App"
+PWA_APP_DESCRIPTION = "Language Learning App PWA"
+PWA_APP_THEME_COLOR = "#000000"
+PWA_APP_BACKGROUND_COLOR = "#ffffff"
+PWA_APP_DISPLAY = "standalone"
+PWA_APP_SCOPE = "/"
+PWA_APP_ORIENTATION = "any"
+PWA_APP_START_URL = "/"
+PWA_APP_STATUS_BAR_COLOR = "default"
 PWA_APP_ICONS = [
     {
-        'src': '/static/images/logo.png',
-        'sizes': '512x512'
+        "src": "/static/images/icon-160x160.png",
+        "sizes": "160x160",
+        "type": "image/png",
     }
 ]
 PWA_APP_ICONS_APPLE = [
     {
-        'src': '/static/images/logo.png',
-        'sizes': '512x512'
+        "src": "/static/images/icon-160x160.png",
+        "sizes": "160x160",
+        "type": "image/png",
     }
 ]
-PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, 'static/js', 'serviceworker.js')
+"""
+PWA_APP_SPLASH_SCREEN = [
+    {
+        "src": "/static/images/icon.png",
+        "media": "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
+    }
+]
+"""
+PWA_APP_DIR = "ltr"
+PWA_APP_LANG = "en-US"
