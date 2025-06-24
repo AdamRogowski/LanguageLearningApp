@@ -78,8 +78,6 @@ def user_word(db, user_lesson, word):
 
 import pytest
 
-import pytest
-
 
 @pytest.mark.django_db
 def test_login_page_get(client):
@@ -227,11 +225,6 @@ def test_import_lesson(client, user, lesson):
 @pytest.mark.django_db
 def test_create_lesson_get(client, user):
     client.login(username="testuser", password="testpass")
-
-
-@pytest.mark.django_db
-def test_create_lesson_get(client, user):
-    client.login(username="testuser", password="testpass")
     response = client.get(reverse("create-lesson"))
     assert response.status_code == 200
     assert "base/create_lesson.html" in [t.name for t in response.templates]
@@ -313,12 +306,6 @@ def test_delete_word_post(client, user, user_word):
     client.login(username="testuser", password="testpass")
     response = client.post(reverse("delete-word", kwargs={"my_word_id": user_word.id}))
     assert response.status_code == 302
-
-
-import pytest
-from django.urls import reverse
-from django.contrib.auth.models import User
-from .models import Lesson, UserLesson, UserWord, Word
 
 
 @pytest.mark.django_db
@@ -425,7 +412,7 @@ def test_cancel_practice(client, user, user_lesson):
 
 
 @pytest.mark.django_db
-def test_my_lessons_forbidden(client, user, superuser, user_lesson):
+def test_my_lessons_access_denied(client, user, superuser, user_lesson):
     other = User.objects.create_user(username="other", password="pass")
     client.login(username="other", password="pass")
     response = client.get(reverse("my-lessons", kwargs={"pk": user.id}))
@@ -433,7 +420,7 @@ def test_my_lessons_forbidden(client, user, superuser, user_lesson):
 
 
 @pytest.mark.django_db
-def test_my_lesson_details_forbidden(client, user, user_lesson):
+def test_my_lesson_details_access_denied(client, user, user_lesson):
     other = User.objects.create_user(username="other", password="pass")
     client.login(username="other", password="pass")
     response = client.get(
