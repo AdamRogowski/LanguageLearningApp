@@ -2,17 +2,14 @@
 
 {% block content %}
 
-<h1>Home Template</h1>
+<h1 class="text-3xl font-bold text-gray-800 mb-6">Home Template</h1>
 
 
 {% if user.is_authenticated %}
-    <a href="{% url 'my-lessons' user.id %}">My Lessons</a>
-{% else %}
-
-    <a href="{% url 'login' %}">My Lessons</a>
+    <a href="{% url 'my-lessons' user.id %}" class="underline">My Lessons</a>
 {% endif %}
 
-<a href="{% url 'lessons-repository' %}">Lessons Repository</a>
+<a href="{% url 'lessons-repository' %}" class="underline">Lessons Repository</a>
 
 <style>
     .home-container {

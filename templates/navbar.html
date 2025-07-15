@@ -1,19 +1,13 @@
 {% load static %}
-<a href="/">
+<!-- <a href="/">
     <img src="{% static 'images/logo.png' %}" alt="Home" style="height: 100px;">
-</a>
-
-<br>
+</a> -->
 
 {% if user.is_authenticated %}
     <p>Welcome, {{ user.username }}!</p>
-    <a href="{% url 'logout' %}">Logout</a>
-    <a href="{% url 'profile' %}">Profile</a>
-    <a href="{% url 'settings' %}">Settings</a>
+    <a href="{% url 'logout' %}" class="underline">Logout</a>
+    <a href="{% url 'profile' %}" class="underline">Profile</a>
+    <a href="{% url 'settings' %}" class="underline">Settings</a>
 {% else %}
-
-
-    <a href="{% url 'login' %}">Login</a>
+    <a href="{% url 'login' %}" class="underline">Login/Register</a>
 {% endif %}
-
-<hr>

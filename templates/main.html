@@ -1,20 +1,32 @@
 <!DOCTYPE html>
 {% load static %}
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Language Learning App</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" type="text/css" media="screen" href="{% static 'styles/main.css' %}">
-    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    <!-- <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}"> -->
 </head>
-<body>
+<body class="min-h-screen flex flex-col">
 
-    <header>
-        <h1>Language Learning App</h1>
-    
-    {% include 'navbar.html' %}
+    <header class="bg-[#ddc2b1] py-6 px-8">
+        <div class="flex justify-between items">
+            <!-- Left: Logo and Title -->
+            <div class="flex flex-col">
+                <h1 class="text-3xl font-bold text-gray-800 mt-6">Language Learning App</h1>
+                    <a href="/"  class="mt-2">
+                        <img src="{% static 'images/logo.png' %}" alt="Home" class="h-20">
+                    </a>
+            </div>
 
+            <!-- Right: Navbar Links -->
+            <div>
+                {% include 'navbar.html' %}
+            </div>
+        </div>
+    </header>
 
     {% if messages %}
         <div id="popup-messages" class="popup-messages">
@@ -55,14 +67,17 @@
             }
         </style>
     {% endif %}
-    </header>
-
-    {% block content %}
-
-    {% endblock %}
-    <footer>
+    
+    <main class="flex-grow px-6 py-10 bg-[#fffaf0]">
+        {% block content %}
+        <p class="text-gray-700">Welcome to the platform!</p>
+        {% endblock %}
+    </main>
+ 
+    <footer class="bg-[#ddc2b1] text-center text-sm text-gray-600 py-4 border-t">
         <hr>
         <p>&copy; 2025 Language Learning App</p>
     </footer>
 
+</body>
 </html>
