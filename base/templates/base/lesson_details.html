@@ -2,8 +2,8 @@
 
 {% block content %}
 
-<h1><a href="{% url 'lessons-repository' %}">Lessons Repository</a></h1>
-<h2><a href="{% url 'lesson-details' lesson.id %}">{{ lesson.title }}</a></h2>
+<h1><a href="{% url 'lessons-repository' %}" class="text-3xl font-bold text-gray-800">Lessons Repository</a></h1>
+<h2 class="mt-6"><a href="{% url 'lesson-details' lesson.id %}" class="text-xl font-bold text-gray-800">{{ lesson.title }}</a></h2>
 {% if lesson.original_lesson %}
     {% if lesson.original_lesson.access_type.name == "private" %}
         <h3>Original Lesson: {{ lesson.original_lesson.title }} (private)</h3>
@@ -27,15 +27,9 @@ last updated on {{ lesson.updated }}
 rating {{ average_rating }} ({{ rating_count }} ratings)
 
 <form action="{% url 'rate-lesson' lesson.id %}" method="get" style="display:inline;">
-    <button type="submit">Rate lesson</button>
+    <button type="submit" class="inline-block px-2 py-1 border border-gray-400 rounded bg-[#ddc2b1] text-gray-700 hover:underline hover:bg-gray-300 text-sm transition-all">Rate lesson</button>
 </form>
 <br>
-last updated on {{ lesson.updated }}
-<br>
-
-<h5>{{ lesson.description }}</h5>
-
-<hr>
 
 
  
@@ -44,10 +38,14 @@ last updated on {{ lesson.updated }}
 
     {% if request.user.is_authenticated %}
         <form action="{% url 'import-lesson' lesson.id %}" method="get">
-            <button type="submit" {% if not can_import %}disabled{% endif %}  >Import Lesson</button>
+            <button type="submit" {% if not can_import %}disabled{% endif %}  class="inline-block px-2 py-1 border border-gray-400 rounded bg-[#ddc2b1] text-gray-700 hover:underline hover:bg-gray-300 text-sm transition-all mt-6">Import Lesson</button>
         </form>
     {% endif %}
 
+    <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'" style="display:inline;" class="inline-block px-2 py-1 border border-gray-400 rounded bg-[#ddc2b1] text-gray-700 hover:underline hover:bg-gray-300 text-sm transition-all mt-2">Cancel</button>
+
+    <h5 class="text-xl font-bold text-gray-800 mt-6">{{ lesson.description }}</h5>
+    <hr>
 
     {% for word in words %}
         <div>
