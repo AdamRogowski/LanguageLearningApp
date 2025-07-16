@@ -11,22 +11,25 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
-    <header class="bg-[#ddc2b1] py-6 px-8">
+<!-- Full-width Image -->
+
+<header class="bg-[#ddc2b1] py-6">
+    <div>
+    <img src="{% static 'images/RectangleTight.jpg' %}" class="bg-[#ddc2b1]" alt="Banner" class="w-full h-auto object-cover" />
+    </div>
+
         <div class="flex justify-between items">
             <!-- Left: Logo and Title -->
             <div class="flex flex-col">
-                <h1 class="text-3xl font-bold text-gray-800 mt-6">Language Learning App</h1>
-                    <a href="/"  class="mt-2">
-                        <img src="{% static 'images/logo.png' %}" alt="Home" class="h-20">
-                    </a>
+                <h1 class="text-3xl font-bold text-gray-800 px-8 mt-6">Language Learning App</h1>
             </div>
 
             <!-- Right: Navbar Links -->
-            <div>
+            <div class="px-8 mt-6">
                 {% include 'navbar.html' %}
             </div>
         </div>
-    </header>
+    </header>  
 
     {% if messages %}
         <div id="popup-messages" class="popup-messages">
@@ -68,7 +71,7 @@
         </style>
     {% endif %}
     
-    <main class="flex-grow px-6 py-10 bg-[#fffaf0]">
+    <main class="bg-[#efefef] flex-grow px-6 py-10">
         {% block content %}
         <p class="text-gray-700">Welcome to the platform!</p>
         {% endblock %}

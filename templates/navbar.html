@@ -4,10 +4,50 @@
 </a> -->
 
 {% if user.is_authenticated %}
-    <p>Welcome, {{ user.username }}!</p>
-    <a href="{% url 'logout' %}" class="underline">Logout</a>
-    <a href="{% url 'profile' %}" class="underline">Profile</a>
-    <a href="{% url 'settings' %}" class="underline">Settings</a>
+<div class="relative inline-block group" id="menu-container">
+  <!-- Menu Button with white background -->
+  <button id="menu-button" class="p-2 border rounded bg-[#efefef] hover:bg-main-color-hover">
+    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" stroke-width="2"
+         viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path stroke-linecap="round" stroke-linejoin="round"
+            d="M4 6h16M4 12h16M4 18h16"></path>
+    </svg>
+  </button>
+
+  <!-- Dropdown Menu -->
+  <div id="dropdown-menu"
+       class="absolute right-0 w-40 bg-white border rounded shadow-lg opacity-0 invisible group-hover:visible group-hover:opacity-100 transition-opacity duration-200 z-10">
+    <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Logout</a>
+    <a href="{% url 'profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+    <a href="{% url 'settings' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Settings</a>
+    <a href="{% url 'home' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Lessons</a>
+  </div>
+</div>
+
+<script>
+  const button = document.getElementById('menu-button');
+  const menu = document.getElementById('dropdown-menu');
+  const container = document.getElementById('menu-container');
+
+  let menuOpen = false;
+
+  // Toggle menu on click
+  button.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menuOpen = !menuOpen;
+    menu.classList.toggle('invisible', !menuOpen);
+    menu.classList.toggle('opacity-0', !menuOpen);
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (menuOpen && !container.contains(e.target)) {
+      menu.classList.add('opacity-0');
+      setTimeout(() => menu.classList.add('invisible'), 200);
+      menuOpen = false;
+    }
+  });
+</script>
 {% else %}
-    <a href="{% url 'login' %}" class="underline">Login/Register</a>
+<a href="{% url 'login' %}" class="underline">Login/Register</a>
 {% endif %}

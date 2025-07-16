@@ -2,17 +2,23 @@
 
 {% block content %}
 
-<h1><a href="{% url 'my-lessons' user.id %}" class="inline-block px-2 py-1 mt-2 border border-gray-400 rounded bg-[#ddc2b1] text-gray-700 hover:underline hover:bg-gray-300 text-sm transition-all">{{user.username}}'s lessons</a></h1>
+<div class="flex justify-center items-center gap-4 flex-wrap mt-4">
 
-<a href="{% url 'lessons-repository' %}" class="inline-block px-2 py-1 mt-2 border border-gray-400 rounded bg-[#ddc2b1] text-gray-700 hover:underline hover:bg-gray-300 text-sm transition-all">Search lessons repository</a>
-<br>
+    <a href="{% url 'my-lessons' user.id %}" class="inline-block px-2 py-1 border border-gray-400 rounded bg-[#ddc2b1] text-gray-700 hover:underline hover:bg-gray-300 text-sm transition-all">
+        {{ user.username }}'s lessons
+    </a>
 
-<a href="{% url 'create-lesson' %}">
-    <button type="button" class="inline-block px-2 py-1 mt-2 border border-gray-400 rounded bg-[#ddc2b1] text-gray-700 hover:underline hover:bg-gray-300 text-sm transition-all">Create lesson</button>
-</a>
+    <a href="{% url 'lessons-repository' %}" class="inline-block px-2 py-1 border border-gray-400 rounded bg-[#ddc2b1] text-gray-700 hover:underline hover:bg-gray-300 text-sm transition-all">
+        Search lessons repository
+    </a>
 
-<hr>
-  
+    <a href="{% url 'create-lesson' %}">
+        <button type="button" class="inline-block px-2 py-1 border border-gray-400 rounded bg-[#ddc2b1] text-gray-700 hover:underline hover:bg-gray-300 text-sm transition-all">
+            Create lesson
+        </button>
+    </a>
+</div>
+
 
 <div class="my-lessons-container">
 

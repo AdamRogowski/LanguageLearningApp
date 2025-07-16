@@ -1,3 +1,11 @@
-body{
-    background-color: #fffaf0;
+.main-bg {
+    background-color: #efefef;
+}
+
+header {
+    background-color: #ddc2b1; 
+}
+
+.footer-bg {
+    background-color: #ddc2b1; 
 }
