@@ -27,19 +27,21 @@ class UserLessonForm(forms.ModelForm):
     title = forms.CharField(
         widget=forms.TextInput(attrs={"autofocus": "autofocus"}), required=True
     )
-    description = forms.CharField(widget=forms.Textarea, required=False)
+    description = forms.CharField(widget=forms.Textarea(attrs={"class": "mt-1.5"}), required=False)
     prompt_language = forms.ModelChoiceField(
         queryset=Language.objects.all(), required=True
     )
     translation_language = forms.ModelChoiceField(
-        queryset=Language.objects.all(), required=True
+        queryset=Language.objects.all(), required=True, widget=forms.Select(attrs={"class": "mt-1.5"})
     )
     access_type = forms.ModelChoiceField(
-        queryset=AccessType.objects.all(), required=True
+        queryset=AccessType.objects.all(), required=True, widget=forms.Select(attrs={"class": "mt-1.5 mb-1.5"})
     )
     target_progress = forms.IntegerField(min_value=1, required=True)
-    practice_window = forms.IntegerField(min_value=1, required=True)
-    allowed_error_margin = forms.IntegerField(min_value=0, required=True)
+    practice_window = forms.IntegerField(min_value=1, required=True,
+    widget=forms.NumberInput(attrs={"class": "mt-1"}))
+    allowed_error_margin = forms.IntegerField(min_value=0, required=True,
+    widget=forms.NumberInput(attrs={"class": "mt-1"}))
 
     def __init__(self, *args, lesson_instance=None, **kwargs):
         super().__init__(*args, **kwargs)

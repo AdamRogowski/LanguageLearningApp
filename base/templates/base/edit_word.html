@@ -2,15 +2,15 @@
 
 {% block content %}
 
-<h1><a href="{% url 'my-lessons' my_word.user_lesson.user.id %}">{{my_word.user_lesson.user.username}}'s lessons</a></h1>
-<h2><a href="{% url 'my-lesson-details' my_word.user_lesson.id %}">{{ my_word.user_lesson.lesson.title }}</a></h2>
+<h1 class="text-3xl font-bold text-gray-800 mb-6"><a href="{% url 'my-lessons' my_word.user_lesson.user.id %}">My lessons</a></h1>
+<h2 class="text-xl font-bold text-gray-800 mb-6"><a href="{% url 'my-lesson-details' my_word.user_lesson.id %}">{{ my_word.user_lesson.lesson.title }}</a></h2>
 
 <form method="POST" action="">
     {% csrf_token %}
     {{ edit_word_form.as_p }}
-    <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'" style="display:inline;">Cancel</button>
-    <input type="submit" value="Submit" />
-    <a href="{% url 'delete-word' my_word.id %}" style="display:inline;" class="button" style="color:red;">Delete</a>
+    <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'" style="display:inline;" class="bg-[#ddc2b1] px-2 py-1 border border-gray-400 rounded text-gray-800 hover:bg-gray-200 text-sm cursor-pointer">Cancel</button>
+    <input type="submit" value="Submit Changes" class="bg-[#ddc2b1] px-2 py-1 border border-gray-400 rounded text-gray-800 hover:bg-gray-200 text-sm cursor-pointer"/>
+    <a href="{% url 'delete-word' my_word.id %}" style="display:inline;" style="color:red;" class="bg-[#ddc2b1] px-2 py-1 border border-gray-400 rounded text-gray-800 hover:bg-gray-200 text-sm cursor-pointer">Delete</a>
 </form>
 
 {% endblock content %}

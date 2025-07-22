@@ -5,8 +5,8 @@
 <form method="POST" action="">
     {% csrf_token %}
     <p>Are you sure you want to delete {{my_word}}?</p>
-    <a href="{{request.META.HTTP_REFERER}}">Cancel</a>
-    <input type="submit" value="Confirm"/>
+    <a href="{{request.META.HTTP_REFERER}}" class="bg-[#ddc2b1] px-2 py-1 border border-gray-400 rounded text-gray-800 hover:bg-gray-200 text-sm cursor-pointer">Cancel</a>
+    <input type="submit" value="Confirm" class="bg-[#ddc2b1] px-2 py-1 border border-gray-400 rounded text-gray-800 hover:bg-gray-200 text-sm cursor-pointer"/>
 </form>
 
 {% endblock content %}
