@@ -595,6 +595,13 @@ def copyLesson(request, my_lesson_id):
 @transaction.atomic
 def editLesson(request, my_lesson_id):
     myLesson = UserLesson.objects.filter(id=my_lesson_id).first()
+    if not myLesson:
+        return HttpResponse("You do not have this lesson.")
+
+    if request.user.id != myLesson.user.id and request.user.is_superuser == False:
+        return HttpResponse("You are not allowed here!")
+    
+    myWords = UserWord.objects.filter(user_lesson=myLesson).order_by(Lower("word__prompt"))
 
     if not myLesson:
         return HttpResponse("You do not have this lesson.")
@@ -697,6 +704,7 @@ def editLesson(request, my_lesson_id):
     context = {
         "edit_user_lesson_form": edit_user_lesson_form,
         "my_lesson": myLesson,
+        "my_words": myWords,
     }
     return render(request, "base/edit_lesson.html", context)
 
@@ -963,8 +971,14 @@ def addWordToLesson(request, my_lesson_id):
                     + f"{timezone.now()} Word '{new_word.prompt}' added by {request.user.username}"
                 )
                 myLesson.lesson.save()
-                messages.success(request, "Word created successfully!")
-                return redirect("my-lesson-details", my_lesson_id=myLesson.id)
+                
+                # Redirection selon le bouton cliqué
+                if "submit_add_another" in request.POST:
+                    messages.success(request, "Word added! You can add another one.")
+                    return redirect("add-word-to-lesson", my_lesson_id=myLesson.id)
+                else:
+                    messages.success(request, "Word created successfully!")
+                    return redirect("my-lesson-details", my_lesson_id=myLesson.id)
 
     context = {
         "my_lesson": myLesson,
@@ -976,7 +990,21 @@ def addWordToLesson(request, my_lesson_id):
     return render(request, "base/add_word_to_lesson.html", context)
 
 
-
+@login_required(login_url="login")
+@require_POST
+@transaction.atomic
+def delete_selected_words(request, my_lesson_id):
+    myLesson = get_object_or_404(UserLesson, id=my_lesson_id, user=request.user)
+    word_ids = request.POST.getlist("selected_words")
+    if word_ids:
+        words_to_delete = Word.objects.filter(id__in=word_ids, lesson=myLesson.lesson)
+        # Supprime aussi les UserWord associés
+        UserWord.objects.filter(word__in=words_to_delete, user_lesson=myLesson).delete()
+        words_to_delete.delete()
+        messages.success(request, f"{len(word_ids)} word(s) deleted.")
+    else:
+        messages.warning(request, "No words selected.")
+    return redirect("edit-lesson", my_lesson_id=my_lesson_id)
 
 # ------------Practice Views------------#
 
