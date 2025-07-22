@@ -871,6 +871,112 @@ def deleteWord(request, my_word_id):
 
     return render(request, "base/delete_word.html", context)
 
+@login_required(login_url="login")
+@transaction.atomic
+def addWordToLesson(request, my_lesson_id):
+    user = request.user
+    myLesson = get_object_or_404(UserLesson, id=my_lesson_id)
+
+    is_author = myLesson.lesson.author == user
+    is_private = myLesson.lesson.access_type.name == "private"
+    can_edit = is_author or myLesson.lesson.access_type.name in ["write"]
+
+    if user != myLesson.user and not user.is_superuser:
+        return HttpResponse("You are not allowed to add words to this lesson.")
+
+    if not (
+        user == myLesson.lesson.author
+        or myLesson.lesson.access_type.name in ["write"]
+    ):
+        return HttpResponse("You do not have permission to add words to this lesson.")
+
+    userWordForm = UserWordForm(request.POST or None)
+
+    if can_edit and request.method == "POST":
+        if userWordForm.is_valid():
+            word_data = userWordForm.cleaned_data.get("word")
+            prompt = (
+                word_data.prompt
+                if word_data
+                else userWordForm.cleaned_data.get("prompt")
+            )
+            translation = (
+                word_data.translation
+                if word_data
+                else userWordForm.cleaned_data.get("translation")
+            )
+            usage = (
+                word_data.usage
+                if word_data
+                else userWordForm.cleaned_data.get("usage")
+            )
+            hint = (
+                word_data.hint
+                if word_data
+                else userWordForm.cleaned_data.get("hint")
+            )
+
+            # Vérifier si le mot existe déjà dans la leçon
+            if Word.objects.filter(prompt=prompt, lesson=myLesson.lesson).exists():
+                messages.error(request, "This word already exists in the lesson.")
+                # On reste sur la page d'ajout
+            else:
+                new_word = Word(
+                    prompt=prompt,
+                    translation=translation,
+                    usage=usage,
+                    hint=hint,
+                    lesson=myLesson.lesson,
+                )
+                new_word.save()
+
+                # Générer l'audio du prompt
+                if new_word.prompt:
+                    rel_path = generate_audio_file(
+                        new_word.prompt,
+                        myLesson.lesson.prompt_language,
+                        "audio/prompts",
+                        f"word_{new_word.id}_prompt.mp3",
+                    )
+                    new_word.prompt_audio = rel_path
+                # Générer l'audio de l'usage
+                if new_word.usage:
+                    rel_path = generate_audio_file(
+                        new_word.usage,
+                        myLesson.lesson.prompt_language,
+                        "audio/usages",
+                        f"word_{new_word.id}_usage.mp3",
+                    )
+                    new_word.usage_audio = rel_path
+                new_word.save()
+
+                UserWord.objects.create(
+                    user_lesson=myLesson,
+                    word=new_word,
+                    current_progress=0,
+                    notes=userWordForm.cleaned_data.get("notes", ""),
+                )
+
+                myLesson.lesson.updated = new_word.updated
+                myLesson.lesson.changes_log = (
+                    (myLesson.lesson.changes_log + "\n" if myLesson.lesson.changes_log else "")
+                    + f"{timezone.now()} Word '{new_word.prompt}' added by {request.user.username}"
+                )
+                myLesson.lesson.save()
+                messages.success(request, "Word created successfully!")
+                return redirect("my-lesson-details", my_lesson_id=myLesson.id)
+
+    context = {
+        "my_lesson": myLesson,
+        "word_form": userWordForm,
+        "can_edit": can_edit,
+        "is_private": is_private,
+        "is_author": is_author,
+    }
+    return render(request, "base/add_word_to_lesson.html", context)
+
+
+
 
 # ------------Practice Views------------#
 
