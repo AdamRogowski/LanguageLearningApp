@@ -13,23 +13,25 @@
 
 <!-- Full-width Image -->
 
-<header class="bg-[#ddc2b1] py-6">
-    <div>
-    <img src="{% static 'images/RectangleTight.jpg' %}" class="bg-[#ddc2b1]" alt="Banner" class="w-full h-auto object-cover" />
-    </div>
-
-        <div class="flex justify-between items">
-            <!-- Left: Logo and Title -->
-            <div class="flex flex-col">
-                <h1 class="text-3xl font-bold text-gray-800 px-8 mt-6">Language Learning App</h1>
-            </div>
-
-            <!-- Right: Navbar Links -->
-            <div class="px-8 mt-6">
+<header class="bg-[#fffcfc]">
+    <div class="relative w-full">
+        {% if user.is_authenticated %}
+            <img src="{% static 'images/LogoChatGPTProKroLoggedIn.png' %}" alt="Banner" class="w-full h-auto object-cover" />
+        {% else %}
+            <img src="{% static 'images/LogoChatGPTProKroTight.png' %}" alt="Banner" class="w-full h-auto object-cover" />
+            <!-- Navbar en haut à droite SUR l'image si non connecté -->
+            <div class="absolute top-0 right-0 p-4">
                 {% include 'navbar.html' %}
             </div>
+        {% endif %}
+    </div>
+    {% if user.is_authenticated %}
+        <!-- Navbar SOUS l'image si connecté -->
+        <div class="flex justify-end w-full px-4 pt-2">
+            {% include 'navbar.html' %}
         </div>
-    </header>  
+    {% endif %}
+</header>
 
     {% if messages %}
         <div id="popup-messages" class="popup-messages">
@@ -71,14 +73,12 @@
         </style>
     {% endif %}
     
-    <main class="bg-[#efefef] flex-grow px-6 py-10">
+    <main class="bg-[#fffcfc] flex-grow px-6 py-10">
         {% block content %}
-        <p class="text-gray-700">Welcome to the platform!</p>
         {% endblock %}
     </main>
  
     <footer class="bg-[#ddc2b1] text-center text-sm text-gray-600 py-4 border-t">
-        <hr>
         <p>&copy; 2025 Language Learning App</p>
     </footer>
 
