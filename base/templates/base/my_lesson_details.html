@@ -25,12 +25,16 @@
 </form>
 
 <a href="{% url 'export-lesson-json' my_lesson.lesson.id %}">
-    <button type="button" class="inline-block px-2 py-1 border border-gray-400 rounded bg-[#ddc2b1] text-gray-700 hover:underline hover:bg-gray-300 text-sm transition-all">Export JSON</button>
+    <button type="button" class="inline-block px-2 py-1 border border-gray-400 rounded bg-[#ddc2b1] text-gray-700 hover:underline hover:bg-gray-300 text-sm transition-all mb-6">Export JSON</button>
 </a>
 
+{% if can_edit %}
 <form action="{% url 'edit-lesson' my_lesson.id %}" method="get" style="display:inline;">
-    <button type="submit"  {% if not is_author %}disabled{% endif %} class="inline-block px-2 py-1 border border-gray-400 rounded bg-[#ddc2b1] text-gray-700 hover:underline hover:bg-gray-300 text-sm transition-all mb-6">Edit lesson</button>
+    <button type="submit" class="inline-block px-2 py-1 border border-gray-400 rounded bg-[#ddc2b1] text-gray-700 hover:underline hover:bg-gray-300 text-sm transition-all">Edit lesson</button>
 </form>
+{% endif %}
+
+<br>
 <hr>
 <br>
 
