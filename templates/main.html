@@ -15,14 +15,14 @@
 
 <header class="bg-[#fffcfc]">
     <div class="relative w-full">
-        {% if user.is_authenticated %}
+        {% if request.path == '/' and not user.is_authenticated %}
             <img src="{% static 'images/LogoChatGPTProKroLoggedIn.png' %}" alt="Banner" class="w-full h-auto object-cover" />
-        {% else %}
-            <img src="{% static 'images/LogoChatGPTProKroTight.png' %}" alt="Banner" class="w-full h-auto object-cover" />
             <!-- Navbar en haut à droite SUR l'image si non connecté -->
             <div class="absolute top-0 right-0 p-4">
                 {% include 'navbar.html' %}
             </div>
+        {% else %}
+            <img src="{% static 'images/LogoChatGPTProKroTight.png' %}" alt="Banner" class="w-full h-auto object-cover" />
         {% endif %}
     </div>
     {% if user.is_authenticated %}
