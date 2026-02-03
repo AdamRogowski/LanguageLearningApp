@@ -177,6 +177,13 @@ class UserLesson(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
+    directory = models.ForeignKey(
+        "UserDirectory",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="lessons",
+    )
     target_progress = models.PositiveIntegerField(
         default=3, validators=[MinValueValidator(1)]
     )
@@ -232,15 +239,17 @@ class Rating(models.Model):
         return f"{self.user.username} rated {self.lesson.title} with {self.rating}"
 
 
-"""
-
 class UserDirectory(models.Model):
+    """
+    Represents a directory/folder for organizing user lessons.
+    Each user has a root directory (parent_directory=None, is_root=True).
+    Directories can contain subdirectories and lessons.
+    """
 
     name = models.CharField(max_length=255)
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE
-    )  # Redundant field to link to User to help with queries
-    userLesson = models.ForeignKey(UserLesson, on_delete=models.CASCADE)
+        User, on_delete=models.CASCADE, related_name="directories"
+    )
     parent_directory = models.ForeignKey(
         "self",
         null=True,
@@ -248,9 +257,49 @@ class UserDirectory(models.Model):
         on_delete=models.CASCADE,
         related_name="subdirectories",
     )
+    is_root = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        ordering = ["name"]
+        # Ensure unique directory names within the same parent for a user
+        unique_together = ("user", "parent_directory", "name")
+
     def __str__(self):
-        return f"{self.name} ({self.userLesson.user.username})"
-"""
+        return f"{self.name} ({self.user.username})"
+
+    def get_path(self):
+        """Returns the full path as a list of directories from root to self."""
+        path = []
+        current = self
+        visited = set()
+        while current is not None:
+            # Prevent infinite recursion from circular references
+            if current.id in visited:
+                break
+            visited.add(current.id)
+            path.insert(0, current)
+            current = current.parent_directory
+        return path
+
+    def get_path_string(self):
+        """Returns the full path as a string like '/Home/Folder1/Folder2'."""
+        return "/" + "/".join(d.name for d in self.get_path())
+
+    @classmethod
+    def get_or_create_root_directory(cls, user):
+        """Get or create the root directory for a user."""
+        root_dir, created = cls.objects.get_or_create(
+            user=user,
+            is_root=True,
+            defaults={"name": "Home", "parent_directory": None}
+        )
+        return root_dir
+
+
+# Signal to create root directory when a new user is created
+@receiver(post_save, sender=User)
+def create_user_root_directory(sender, instance, created, **kwargs):
+    if created:
+        UserDirectory.get_or_create_root_directory(instance)

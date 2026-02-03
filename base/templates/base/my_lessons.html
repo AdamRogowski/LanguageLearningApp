@@ -1,9 +1,6 @@
 {% extends "main.html" %}
 
 {% block content %}
-
-<h1><a href="{% url 'my-lessons' user.id %}">{{user.username}}'s lessons</a></h1>
-
 <a href="{% url 'lessons-repository' %}">Search lessons repository</a>
 <br>
 
@@ -12,18 +9,253 @@
 </a>
 
 <hr>
-  
+
+<!-- Breadcrumb Navigation -->
+<nav class="breadcrumb-nav">
+    <span>📁 </span>
+    {% for dir in breadcrumb_path %}
+        {% if forloop.last %}
+            <strong>{{ dir.name }}</strong>
+        {% else %}
+            {% if dir.is_root %}
+                <a href="{% url 'my-lessons' user.id %}">{{ dir.name }}</a>
+            {% else %}
+                <a href="{% url 'my-lessons-directory' user.id dir.id %}">{{ dir.name }}</a>
+            {% endif %}
+            <span> / </span>
+        {% endif %}
+    {% endfor %}
+</nav>
+
+<!-- Create New Folder Form -->
+<div class="create-directory-form">
+    <form method="POST" action="{% url 'create-directory' current_directory.id %}" style="display: inline-flex; gap: 8px; align-items: center;">
+        {% csrf_token %}
+        <input type="text" name="name" placeholder="New folder name" required maxlength="255">
+        <button type="submit">📁 Create Folder</button>
+    </form>
+</div>
+
+<hr>
+
+<!-- Hidden form for drag-and-drop operations -->
+<form id="move-item-form" method="POST" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="item_type" id="move-item-type">
+    <input type="hidden" name="item_id" id="move-item-id">
+    <input type="hidden" name="target_directory_id" id="move-target-directory">
+</form>
 
 <div class="my-lessons-container">
 
-    <div>
-    {% for my_lesson in my_lessons %}
-        <div>
-            <a href="{% url 'my-lesson-details' my_lesson.id %}">{{ my_lesson.lesson.title }}</a>
-        </div>    
-    {% endfor %}
+    <!-- Subdirectories -->
+    {% if subdirectories %}
+    <div class="directories-list">
+        {% for subdir in subdirectories %}
+            <div class="directory-item droppable" 
+                 draggable="true" 
+                 data-type="directory" 
+                 data-id="{{ subdir.id }}"
+                 data-target-id="{{ subdir.id }}">
+                <span class="drag-handle">⋮⋮</span>
+                <span class="directory-icon">📁</span>
+                <a href="{% url 'my-lessons-directory' user.id subdir.id %}" class="directory-link">{{ subdir.name }}</a>
+                <span class="directory-actions">
+                    <a href="{% url 'rename-directory' subdir.id %}" title="Rename">✏️</a>
+                    <a href="{% url 'move-directory' subdir.id %}" title="Move">📦</a>
+                    <a href="{% url 'delete-directory' subdir.id %}" title="Delete">🗑️</a>
+                </span>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Lessons in current directory -->
+    <div class="lessons-list">
+        {% if my_lessons %}
+        {% for my_lesson in my_lessons %}
+            <div class="lesson-item draggable" 
+                 draggable="true" 
+                 data-type="lesson" 
+                 data-id="{{ my_lesson.id }}">
+                <span class="drag-handle">⋮⋮</span>
+                <span class="lesson-icon">📖</span>
+                <a href="{% url 'my-lesson-details' my_lesson.id %}">{{ my_lesson.lesson.title }}</a>
+                <span class="lesson-actions">
+                    <a href="{% url 'move-lesson' my_lesson.id %}" title="Move to folder">📦</a>
+                </span>
+            </div>    
+        {% endfor %}
+        {% else %}
+            {% if not subdirectories %}
+            <p>No lessons or folders in this directory.</p>
+            {% endif %}
+        {% endif %}
+    </div>
 
 </div>
 
+<style>
+    .breadcrumb-nav {
+        padding: 10px 0;
+        margin-bottom: 15px;
+    }
+    .breadcrumb-nav a {
+        color: #007bff;
+        text-decoration: none;
+    }
+    .breadcrumb-nav a:hover {
+        text-decoration: underline;
+    }
+    .create-directory-form {
+        margin: 15px 0;
+    }
+    .create-directory-form input[type="text"] {
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .create-directory-form button {
+        padding: 6px 12px;
+        cursor: pointer;
+    }
+    .directories-list, .lessons-list {
+        margin-bottom: 20px;
+    }
+    .directory-item, .lesson-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 5px;
+        gap: 10px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+    .directory-item:hover, .lesson-item:hover {
+        background-color: #f5f5f5;
+    }
+    .directory-icon, .lesson-icon {
+        font-size: 1.2em;
+    }
+    .directory-link, .lesson-item a {
+        flex-grow: 1;
+    }
+    .directory-actions, .lesson-actions {
+        display: flex;
+        gap: 8px;
+    }
+    .directory-actions a, .lesson-actions a {
+        text-decoration: none;
+        opacity: 0.6;
+    }
+    .directory-actions a:hover, .lesson-actions a:hover {
+        opacity: 1;
+    }
+    
+    /* Drag and Drop Styles */
+    .drag-handle {
+        cursor: grab;
+        color: #999;
+        font-size: 1.1em;
+        user-select: none;
+        padding: 0 5px;
+    }
+    .drag-handle:hover {
+        color: #666;
+    }
+    .draggable[draggable="true"], .directory-item[draggable="true"] {
+        cursor: grab;
+    }
+    .draggable.dragging, .directory-item.dragging {
+        opacity: 0.5;
+        cursor: grabbing;
+    }
+    .droppable.drag-over {
+        background-color: #e3f2fd;
+        border: 2px dashed #2196f3;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const draggables = document.querySelectorAll('[draggable="true"]');
+    const droppables = document.querySelectorAll('.droppable');
+    
+    let draggedItem = null;
+    let draggedType = null;
+    let draggedId = null;
+    
+    // Draggable items (lessons and directories)
+    draggables.forEach(item => {
+        item.addEventListener('dragstart', function(e) {
+            draggedItem = this;
+            draggedType = this.dataset.type;
+            draggedId = this.dataset.id;
+            this.classList.add('dragging');
+            
+            // Set drag data
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', JSON.stringify({
+                type: draggedType,
+                id: draggedId
+            }));
+        });
+        
+        item.addEventListener('dragend', function(e) {
+            this.classList.remove('dragging');
+            draggedItem = null;
+            draggedType = null;
+            draggedId = null;
+            
+            // Remove drag-over from all droppables
+            droppables.forEach(d => d.classList.remove('drag-over'));
+        });
+    });
+    
+    // Droppable directories
+    droppables.forEach(dropzone => {
+        dropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            // Don't allow dropping on itself
+            const targetId = this.dataset.targetId;
+            if (draggedType === 'directory' && draggedId === targetId) {
+                return;
+            }
+            
+            this.classList.add('drag-over');
+        });
+        
+        dropzone.addEventListener('dragleave', function(e) {
+            // Only remove if leaving the actual element, not a child
+            if (!this.contains(e.relatedTarget)) {
+                this.classList.remove('drag-over');
+            }
+        });
+        
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            
+            const targetDirectoryId = this.dataset.targetId;
+            
+            // Don't allow dropping directory on itself
+            if (draggedType === 'directory' && draggedId === targetDirectoryId) {
+                return;
+            }
+            
+            // Submit the move operation
+            const form = document.getElementById('move-item-form');
+            document.getElementById('move-item-type').value = draggedType;
+            document.getElementById('move-item-id').value = draggedId;
+            document.getElementById('move-target-directory').value = targetDirectoryId;
+            
+            // Set the form action based on item type
+            form.action = '{% url "drag-drop-move" %}';
+            form.submit();
+        });
+    });
+});
+</script>
 
 {% endblock content %}

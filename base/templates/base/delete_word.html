@@ -2,6 +2,8 @@
 
 {% block content %}
 
+{% include 'base/includes/breadcrumb.html' %}
+
 <form method="POST" action="">
     {% csrf_token %}
     <p>Are you sure you want to delete {{my_word}}?</p>

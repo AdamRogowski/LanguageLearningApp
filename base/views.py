@@ -19,6 +19,7 @@ from .models import (
     Rating,
     Language,
     UserProfile,
+    UserDirectory,
 )
 from .forms import (
     RateLessonForm,
@@ -26,6 +27,9 @@ from .forms import (
     UserWordForm,
     UserProfileForm,
     UserForm,
+    UserDirectoryForm,
+    MoveLessonForm,
+    MoveDirectoryForm,
 )
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -102,18 +106,64 @@ def home(request):
 
 
 @login_required(login_url="login")
-def myLessons(request, pk):
+def myLessons(request, pk, directory_id=None):
     user = get_object_or_404(User, id=pk)
 
     if request.user.id != user.id and not request.user.is_superuser:
         return HttpResponse("You are not allowed here!", status=403)
 
-    user_lessons = UserLesson.objects.filter(user=user).select_related(
+    # Get or create root directory for the user
+    root_directory = UserDirectory.get_or_create_root_directory(user)
+
+    # Determine current directory
+    if directory_id:
+        current_directory = get_object_or_404(UserDirectory, id=directory_id, user=user)
+    else:
+        current_directory = root_directory
+
+    # Get subdirectories in current directory
+    subdirectories = UserDirectory.objects.filter(
+        user=user, parent_directory=current_directory
+    ).order_by(Lower("name"))
+
+    # Get lessons in current directory
+    user_lessons = UserLesson.objects.filter(
+        user=user, directory=current_directory
+    ).select_related(
         "lesson", "lesson__prompt_language", "lesson__translation_language"
     ).order_by(Lower("lesson__title"))
+
+    # Get lessons without a directory (for migration purposes, put them in root)
+    orphan_lessons = UserLesson.objects.filter(
+        user=user, directory__isnull=True
+    )
+    if orphan_lessons.exists() and current_directory == root_directory:
+        # Move orphan lessons to root directory
+        orphan_lessons.update(directory=root_directory)
+        # Refresh the query
+        user_lessons = UserLesson.objects.filter(
+            user=user, directory=current_directory
+        ).select_related(
+            "lesson", "lesson__prompt_language", "lesson__translation_language"
+        ).order_by(Lower("lesson__title"))
+
+    # Build breadcrumb path
+    breadcrumb_path = current_directory.get_path()
+
+    # Store current directory in session for use in other views
+    request.session['current_directory_id'] = current_directory.id
+
+    # Form for creating new directory
+    directory_form = UserDirectoryForm(user=user, parent_directory=current_directory)
+
     context = {
         "user": user,
         "my_lessons": user_lessons,
+        "subdirectories": subdirectories,
+        "current_directory": current_directory,
+        "breadcrumb_path": breadcrumb_path,
+        "root_directory": root_directory,
+        "directory_form": directory_form,
     }
     return render(request, "base/my_lessons.html", context)
 
@@ -255,6 +305,14 @@ def myLessonDetails(request, my_lesson_id):
                 messages.success(request, "Word created successfully!")
                 return redirect("my-lesson-details", my_lesson_id=myLesson.id)
 
+    # Get breadcrumb path from lesson's directory
+    current_directory = myLesson.directory
+    if not current_directory:
+        current_directory = UserDirectory.get_or_create_root_directory(request.user)
+        myLesson.directory = current_directory
+        myLesson.save()
+    breadcrumb_path = current_directory.get_path()
+
     context = {
         "my_lesson": myLesson,
         "my_words": myWords,
@@ -262,6 +320,8 @@ def myLessonDetails(request, my_lesson_id):
         "can_edit": can_edit,
         "is_private": is_private,
         "is_author": is_author,
+        "current_directory": current_directory,
+        "breadcrumb_path": breadcrumb_path,
     }
     return render(request, "base/my_lesson_details.html", context)
 
@@ -287,6 +347,8 @@ def deleteMyLesson(request, my_lesson_id):
 
     if request.method == "POST":
         action = request.POST.get("action")
+        # Get the directory for redirect before deletion
+        redirect_directory = myLesson.directory
 
         if action == "delete_both":
             # Delete lesson from repository and all related UserLesson
@@ -295,6 +357,8 @@ def deleteMyLesson(request, my_lesson_id):
                 request,
                 "Lesson and all your references were deleted from the repository.",
             )
+            if redirect_directory:
+                return redirect("my-lessons-directory", pk=user.id, directory_id=redirect_directory.id)
             return redirect("my-lessons", pk=user.id)
         elif action == "delete_mylesson":
             myLesson.delete()
@@ -302,12 +366,22 @@ def deleteMyLesson(request, my_lesson_id):
                 request,
                 "Your lesson reference was deleted. The lesson remains in the repository.",
             )
+            if redirect_directory:
+                return redirect("my-lessons-directory", pk=user.id, directory_id=redirect_directory.id)
             return redirect("my-lessons", pk=user.id)
+
+    # Get breadcrumb path from lesson's directory
+    current_directory = myLesson.directory
+    if not current_directory:
+        current_directory = UserDirectory.get_or_create_root_directory(request.user)
+    breadcrumb_path = current_directory.get_path()
 
     context = {
         "my_lesson": myLesson,
         "is_author": is_author,
         "is_private": is_private,
+        "current_directory": current_directory,
+        "breadcrumb_path": breadcrumb_path,
     }
     return render(request, "base/delete_my_lesson.html", context)
 
@@ -316,7 +390,7 @@ def deleteMyLesson(request, my_lesson_id):
 def myWordDetails(request, my_word_id):
 
     myWord = UserWord.objects.select_related(
-        "user_lesson", "user_lesson__user", "word"
+        "user_lesson", "user_lesson__user", "user_lesson__directory", "word"
     ).filter(id=my_word_id).first()
     if not myWord:
         return HttpResponse("You do not have this word in your lesson.", status=404)
@@ -327,8 +401,16 @@ def myWordDetails(request, my_word_id):
     ):
         return HttpResponse("You are not allowed here!", status=403)
 
+    # Get breadcrumb path from lesson's directory
+    current_directory = myWord.user_lesson.directory
+    if not current_directory:
+        current_directory = UserDirectory.get_or_create_root_directory(request.user)
+    breadcrumb_path = current_directory.get_path()
+
     context = {
         "my_word": myWord,
+        "current_directory": current_directory,
+        "breadcrumb_path": breadcrumb_path,
     }
     return render(request, "base/my_word_details.html", context)
 
@@ -490,11 +572,22 @@ def importLesson(request, lesson_id):
 @login_required(login_url="login")
 @transaction.atomic  # ensures rollback on failure
 def createLesson(request):
+    # Get current directory from session, or use root directory
+    current_directory_id = request.session.get('current_directory_id')
+    if current_directory_id:
+        current_directory = UserDirectory.objects.filter(
+            id=current_directory_id, user=request.user
+        ).first()
+        if not current_directory:
+            current_directory = UserDirectory.get_or_create_root_directory(request.user)
+    else:
+        current_directory = UserDirectory.get_or_create_root_directory(request.user)
 
     if request.method == "POST":
         user_lesson_form = UserLessonForm(request.POST)
 
         if user_lesson_form.is_valid():
+
             # First, create and save the Lesson instance from form data
             lesson = Lesson(
                 title=user_lesson_form.cleaned_data["title"],
@@ -515,6 +608,7 @@ def createLesson(request):
             myLesson = user_lesson_form.save(commit=False)
             myLesson.lesson = lesson
             myLesson.user = request.user
+            myLesson.directory = current_directory  # Assign to current directory
             myLesson.save()
 
             messages.success(request, "Lesson created successfully!")
@@ -522,11 +616,20 @@ def createLesson(request):
     else:
         user_profile = request.user.userprofile
         user_lesson_form = UserLessonForm(initial={
+            'access_type': AccessType.objects.get(name="private"),
+            'target_progress': user_profile.target_progress,
             'practice_window': user_profile.practice_window,
             'allowed_error_margin': user_profile.allowed_error_margin,
         })
 
-    context = {"lesson_form": user_lesson_form}
+    # Build breadcrumb for current directory
+    breadcrumb_path = current_directory.get_path()
+
+    context = {
+        "lesson_form": user_lesson_form,
+        "current_directory": current_directory,
+        "breadcrumb_path": breadcrumb_path,
+    }
     return render(request, "base/create_lesson.html", context)
 
 
@@ -547,6 +650,9 @@ def copyLesson(request, my_lesson_id):
     if myLesson.lesson.access_type.name == "private":
         return HttpResponse("You cannot copy a private lesson.", status=403)
 
+    # Get or create root directory for the user
+    root_directory = UserDirectory.get_or_create_root_directory(request.user)
+
     # Create a new lesson based on the existing one
     lesson = myLesson.lesson
     lesson.changes_log = (
@@ -565,7 +671,11 @@ def copyLesson(request, my_lesson_id):
     )
     new_lesson.save()
     # Create a UserLesson for the new lesson
-    new_user_lesson = UserLesson.objects.create(user=request.user, lesson=new_lesson)
+    new_user_lesson = UserLesson.objects.create(
+        user=request.user, 
+        lesson=new_lesson,
+        directory=root_directory  # Assign to root directory
+    )
 
     # Copy words from the original lesson to the new lesson
     words = lesson.words.all()
@@ -608,6 +718,9 @@ def importAndCopyLesson(request, lesson_id):
     if lesson.access_type.name == "private":
         return HttpResponse("This lesson is private and cannot be imported.", status=403)
 
+    # Get or create root directory for the user
+    root_directory = UserDirectory.get_or_create_root_directory(user)
+
     # Create a new lesson as a copy
     new_lesson = Lesson(
         title=lesson.title,
@@ -624,6 +737,7 @@ def importAndCopyLesson(request, lesson_id):
     # Create UserLesson for the new lesson
     new_user_lesson = UserLesson.objects.create(
         user=user, lesson=new_lesson,
+        directory=root_directory,  # Assign to root directory
         target_progress=user.userprofile.target_progress,
         practice_window=user.userprofile.practice_window,
         allowed_error_margin=user.userprofile.allowed_error_margin,
@@ -764,9 +878,17 @@ def editLesson(request, my_lesson_id):
             messages.success(request, "Lesson updated successfully!")
             return redirect("my-lesson-details", my_lesson_id=myLesson.id)
 
+    # Get breadcrumb path from lesson's directory
+    current_directory = myLesson.directory
+    if not current_directory:
+        current_directory = UserDirectory.get_or_create_root_directory(request.user)
+    breadcrumb_path = current_directory.get_path()
+
     context = {
         "edit_user_lesson_form": edit_user_lesson_form,
         "my_lesson": myLesson,
+        "current_directory": current_directory,
+        "breadcrumb_path": breadcrumb_path,
     }
     return render(request, "base/edit_lesson.html", context)
 
@@ -784,8 +906,16 @@ def resetProgress(request, my_lesson_id):
         )
         return redirect("my-lesson-details", my_lesson_id=my_lesson_id)
 
+    # Get breadcrumb path from lesson's directory
+    current_directory = myLesson.directory
+    if not current_directory:
+        current_directory = UserDirectory.get_or_create_root_directory(request.user)
+    breadcrumb_path = current_directory.get_path()
+
     context = {
         "my_lesson": myLesson,
+        "current_directory": current_directory,
+        "breadcrumb_path": breadcrumb_path,
     }
     return render(request, "base/reset_progress.html", context)
 
@@ -893,9 +1023,17 @@ def editWord(request, my_word_id):
     else:
         edit_word_form = UserWordForm(instance=myWord, word_instance=myWord.word)
 
+    # Get breadcrumb path from lesson's directory
+    current_directory = myWord.user_lesson.directory
+    if not current_directory:
+        current_directory = UserDirectory.get_or_create_root_directory(request.user)
+    breadcrumb_path = current_directory.get_path()
+
     context = {
         "edit_word_form": edit_word_form,
         "my_word": myWord,
+        "current_directory": current_directory,
+        "breadcrumb_path": breadcrumb_path,
     }
     return render(request, "base/edit_word.html", context)
 
@@ -942,8 +1080,16 @@ def deleteWord(request, my_word_id):
         myLesson.lesson.save()
         return redirect("my-lesson-details", my_lesson_id=myLesson.id)
 
+    # Get breadcrumb path from lesson's directory
+    current_directory = myWord.user_lesson.directory
+    if not current_directory:
+        current_directory = UserDirectory.get_or_create_root_directory(request.user)
+    breadcrumb_path = current_directory.get_path()
+
     context = {
         "my_word": myWord,
+        "current_directory": current_directory,
+        "breadcrumb_path": breadcrumb_path,
     }
 
     return render(request, "base/delete_word.html", context)
@@ -1152,8 +1298,15 @@ def import_lesson_json(request):
                 hint=word.get("hint", ""),
             )
 
+        # Get or create root directory for the user
+        root_directory = UserDirectory.get_or_create_root_directory(request.user)
+
         # Create UserLesson for the importing user
-        user_lesson = UserLesson.objects.create(user=request.user, lesson=lesson)
+        user_lesson = UserLesson.objects.create(
+            user=request.user, 
+            lesson=lesson,
+            directory=root_directory  # Assign to root directory
+        )
 
         # Create UserWord for each word
         for word in lesson.words.all():
@@ -1351,3 +1504,244 @@ def get_user_memory_usage(user):
     # For a rough estimate, assume 1 char = 1 byte.
     total_bytes = total_chars + total_audio_bytes
     return total_bytes
+
+
+# ---------------Directory Views---------------#
+
+
+@login_required(login_url="login")
+@require_POST
+def createDirectory(request, directory_id):
+    """Create a new directory within the specified parent directory."""
+    parent_directory = get_object_or_404(UserDirectory, id=directory_id, user=request.user)
+    
+    form = UserDirectoryForm(request.POST, user=request.user, parent_directory=parent_directory)
+    if form.is_valid():
+        directory = form.save(commit=False)
+        directory.user = request.user
+        directory.parent_directory = parent_directory
+        directory.save()
+        messages.success(request, f"Folder '{directory.name}' created successfully!")
+    else:
+        for error in form.errors.values():
+            messages.error(request, error[0])
+    
+    return redirect("my-lessons-directory", pk=request.user.id, directory_id=parent_directory.id)
+
+
+@login_required(login_url="login")
+def renameDirectory(request, directory_id):
+    """Rename an existing directory."""
+    directory = get_object_or_404(UserDirectory, id=directory_id, user=request.user)
+    
+    if directory.is_root:
+        messages.error(request, "Cannot rename the Home folder.")
+        return redirect("my-lessons", pk=request.user.id)
+    
+    parent_id = directory.parent_directory.id if directory.parent_directory else None
+    
+    if request.method == "POST":
+        form = UserDirectoryForm(
+            request.POST, 
+            instance=directory, 
+            user=request.user, 
+            parent_directory=directory.parent_directory
+        )
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Folder renamed to '{directory.name}' successfully!")
+            if parent_id:
+                return redirect("my-lessons-directory", pk=request.user.id, directory_id=parent_id)
+            return redirect("my-lessons", pk=request.user.id)
+        else:
+            for error in form.errors.values():
+                messages.error(request, error[0])
+    else:
+        form = UserDirectoryForm(instance=directory, user=request.user, parent_directory=directory.parent_directory)
+    
+    context = {
+        "form": form,
+        "directory": directory,
+    }
+    return render(request, "base/rename_directory.html", context)
+
+
+@login_required(login_url="login")
+def moveDirectory(request, directory_id):
+    """Move a directory to a different parent directory."""
+    directory = get_object_or_404(UserDirectory, id=directory_id, user=request.user)
+    
+    if directory.is_root:
+        messages.error(request, "Cannot move the Home folder.")
+        return redirect("my-lessons", pk=request.user.id)
+    
+    original_parent_id = directory.parent_directory.id if directory.parent_directory else None
+    
+    if request.method == "POST":
+        form = MoveDirectoryForm(request.POST, user=request.user, current_directory=directory)
+        if form.is_valid():
+            new_parent = form.cleaned_data["parent_directory"]
+            # Check that we're not moving to the same location
+            if new_parent.id == original_parent_id:
+                messages.info(request, "Folder is already in this location.")
+            else:
+                directory.parent_directory = new_parent
+                directory.save()
+                messages.success(request, f"Folder '{directory.name}' moved successfully!")
+            return redirect("my-lessons-directory", pk=request.user.id, directory_id=new_parent.id)
+    else:
+        form = MoveDirectoryForm(user=request.user, current_directory=directory)
+    
+    context = {
+        "form": form,
+        "directory": directory,
+    }
+    return render(request, "base/move_directory.html", context)
+
+
+@login_required(login_url="login")
+def deleteDirectory(request, directory_id):
+    """Delete a directory and optionally its contents."""
+    directory = get_object_or_404(UserDirectory, id=directory_id, user=request.user)
+    
+    if directory.is_root:
+        messages.error(request, "Cannot delete the Home folder.")
+        return redirect("my-lessons", pk=request.user.id)
+    
+    parent_id = directory.parent_directory.id if directory.parent_directory else None
+    
+    # Count contents for warning
+    subdirectory_count = directory.subdirectories.count()
+    lesson_count = directory.lessons.count()
+    
+    if request.method == "POST":
+        action = request.POST.get("action", "cancel")
+        
+        if action == "delete_all":
+            # Delete directory and all contents (cascade will handle it)
+            directory_name = directory.name
+            directory.delete()
+            messages.success(request, f"Folder '{directory_name}' and all its contents deleted successfully!")
+        elif action == "move_contents":
+            # Move all contents to parent directory, then delete the empty directory
+            parent = directory.parent_directory
+            
+            # Move subdirectories
+            for subdir in directory.subdirectories.all():
+                subdir.parent_directory = parent
+                subdir.save()
+            
+            # Move lessons
+            for lesson in directory.lessons.all():
+                lesson.directory = parent
+                lesson.save()
+            
+            directory_name = directory.name
+            directory.delete()
+            messages.success(request, f"Contents moved and folder '{directory_name}' deleted successfully!")
+        else:
+            # Cancel
+            messages.info(request, "Deletion cancelled.")
+        
+        if parent_id:
+            return redirect("my-lessons-directory", pk=request.user.id, directory_id=parent_id)
+        return redirect("my-lessons", pk=request.user.id)
+    
+    context = {
+        "directory": directory,
+        "subdirectory_count": subdirectory_count,
+        "lesson_count": lesson_count,
+        "has_contents": subdirectory_count > 0 or lesson_count > 0,
+    }
+    return render(request, "base/delete_directory.html", context)
+
+
+@login_required(login_url="login")
+def moveLesson(request, my_lesson_id):
+    """Move a lesson to a different directory."""
+    user_lesson = get_object_or_404(UserLesson, id=my_lesson_id, user=request.user)
+    
+    current_directory_id = user_lesson.directory.id if user_lesson.directory else None
+    
+    if request.method == "POST":
+        form = MoveLessonForm(request.POST, user=request.user)
+        if form.is_valid():
+            new_directory = form.cleaned_data["directory"]
+            user_lesson.directory = new_directory
+            user_lesson.save()
+            messages.success(request, f"Lesson '{user_lesson.lesson.title}' moved successfully!")
+            return redirect("my-lessons-directory", pk=request.user.id, directory_id=new_directory.id)
+    else:
+        form = MoveLessonForm(user=request.user)
+        if user_lesson.directory:
+            form.fields["directory"].initial = user_lesson.directory
+    
+    context = {
+        "form": form,
+        "user_lesson": user_lesson,
+    }
+    return render(request, "base/move_lesson.html", context)
+
+
+@login_required(login_url="login")
+@require_POST
+def dragDropMove(request):
+    """Handle drag-and-drop move operations for lessons and directories."""
+    item_type = request.POST.get("item_type")
+    item_id = request.POST.get("item_id")
+    target_directory_id = request.POST.get("target_directory_id")
+    
+    if not all([item_type, item_id, target_directory_id]):
+        messages.error(request, "Invalid move operation.")
+        return redirect("my-lessons", pk=request.user.id)
+    
+    try:
+        item_id = int(item_id)
+        target_directory_id = int(target_directory_id)
+    except ValueError:
+        messages.error(request, "Invalid move operation.")
+        return redirect("my-lessons", pk=request.user.id)
+    
+    # Get target directory
+    target_directory = get_object_or_404(UserDirectory, id=target_directory_id, user=request.user)
+    
+    if item_type == "lesson":
+        user_lesson = get_object_or_404(UserLesson, id=item_id, user=request.user)
+        source_directory = user_lesson.directory
+        
+        if source_directory and source_directory.id == target_directory_id:
+            messages.info(request, "Lesson is already in this folder.")
+        else:
+            user_lesson.directory = target_directory
+            user_lesson.save()
+            messages.success(request, f"Lesson '{user_lesson.lesson.title}' moved to '{target_directory.name}'!")
+        
+    elif item_type == "directory":
+        directory = get_object_or_404(UserDirectory, id=item_id, user=request.user)
+        
+        if directory.is_root:
+            messages.error(request, "Cannot move the Home folder.")
+        elif directory.id == target_directory_id:
+            messages.info(request, "Cannot move folder into itself.")
+        else:
+            # Check for circular reference (target is a descendant of source)
+            def is_descendant(potential_ancestor, potential_descendant):
+                current = potential_descendant
+                while current is not None:
+                    if current.id == potential_ancestor.id:
+                        return True
+                    current = current.parent_directory
+                return False
+            
+            if is_descendant(directory, target_directory):
+                messages.error(request, "Cannot move a folder into one of its subfolders.")
+            elif directory.parent_directory and directory.parent_directory.id == target_directory_id:
+                messages.info(request, "Folder is already in this location.")
+            else:
+                directory.parent_directory = target_directory
+                directory.save()
+                messages.success(request, f"Folder '{directory.name}' moved to '{target_directory.name}'!")
+    else:
+        messages.error(request, "Invalid item type.")
+    
+    return redirect("my-lessons-directory", pk=request.user.id, directory_id=target_directory_id)

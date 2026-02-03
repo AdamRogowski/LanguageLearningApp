@@ -34,14 +34,13 @@ A Django-based progressive web application designed to help users learn foreign 
 2. **Set up virtual environment**
 
    ```bash
-   python -m venv env
-   source env/bin/activate  # On Windows: env\Scripts\activate
+   python -m venv _env
+   source _env/bin/activate  # On Windows: env\Scripts\activate
    ```
 
 3. **Install dependencies**
 
    ```bash
-   cd languagelearningapp
    pip install -r requirements.txt
    ```
 

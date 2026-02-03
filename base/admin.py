@@ -15,6 +15,7 @@ from .models import (
     AccessType,
     Rating,
     UserProfile,
+    UserDirectory,
 )
 
 admin.site.register(Language)
@@ -25,3 +26,4 @@ admin.site.register(UserWord)
 admin.site.register(AccessType)
 admin.site.register(Rating)
 admin.site.register(UserProfile)
+admin.site.register(UserDirectory)

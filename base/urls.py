@@ -11,6 +11,14 @@ urlpatterns = [
     path("register/", views.registerPage, name="register"),
     path("", views.home, name="home"),
     path("my-lessons/<str:pk>/", views.myLessons, name="my-lessons"),
+    path("my-lessons/<str:pk>/directory/<int:directory_id>/", views.myLessons, name="my-lessons-directory"),
+    # Directory management
+    path("create-directory/<int:directory_id>/", views.createDirectory, name="create-directory"),
+    path("rename-directory/<int:directory_id>/", views.renameDirectory, name="rename-directory"),
+    path("move-directory/<int:directory_id>/", views.moveDirectory, name="move-directory"),
+    path("delete-directory/<int:directory_id>/", views.deleteDirectory, name="delete-directory"),
+    path("move-lesson/<int:my_lesson_id>/", views.moveLesson, name="move-lesson"),
+    path("drag-drop-move/", views.dragDropMove, name="drag-drop-move"),
     path(
         "delete-my-lesson/<int:my_lesson_id>/",
         views.deleteMyLesson,

@@ -2,8 +2,7 @@
 
 {% block content %}
 
-<h1><a href="{% url 'my-lessons' my_word.user_lesson.user.id %}">{{my_word.user_lesson.user.username}}'s lessons</a></h1>
-
+{% include 'base/includes/breadcrumb.html' %}
 <h2><a href="{% url 'my-lesson-details' my_word.user_lesson.id %}">{{ my_word.user_lesson.lesson.title }}</a></h2>
 {{ my_lesson.lesson.access_type.name}}
 
