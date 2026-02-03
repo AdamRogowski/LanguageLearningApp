@@ -93,8 +93,7 @@ def test_login_page_post_invalid_user(client):
     assert response.status_code == 200
     messages = list(get_messages(response.wsgi_request))
     assert any(
-        "User does not exist" in str(m)
-        or "Username OR password does not exist" in str(m)
+        "Invalid username or password" in str(m)
         for m in messages
     )
 
@@ -145,7 +144,7 @@ def test_my_lessons_forbidden(client, user, superuser, user_lesson):
     User.objects.create_user(username="other", password="pass")
     client.login(username="other", password="pass")
     response = client.get(reverse("my-lessons", kwargs={"pk": user.id}))
-    assert response.status_code == 200
+    assert response.status_code == 403
     assert b"You are not allowed here!" in response.content
 
 
@@ -216,9 +215,9 @@ def test_lesson_details_public(client, lesson, user, access_type_private, langua
 
 
 @pytest.mark.django_db
-def test_import_lesson(client, user, lesson):
+def test_import_lesson(client, user, lesson, access_type_private):
     client.login(username="testuser", password="testpass")
-    response = client.post(reverse("import-lesson", kwargs={"lesson_id": lesson.id}))
+    response = client.get(reverse("import-lesson", kwargs={"lesson_id": lesson.id}))
     assert response.status_code in (302, 200)
 
 

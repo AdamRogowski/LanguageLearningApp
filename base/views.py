@@ -52,25 +52,22 @@ def loginPage(request):
         return redirect("home")
 
     if request.method == "POST":
-        username = request.POST.get("username")
-        password = request.POST.get("password")
-
-        try:
-            user = User.objects.get(username=username)
-        except:
-            messages.error(request, "User does not exist")
+        username = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "")
 
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
             return redirect("home")
         else:
-            messages.error(request, "Username OR password does not exist")
+            # Generic message to avoid user enumeration attacks
+            messages.error(request, "Invalid username or password.")
 
     context = {"page": page}
     return render(request, "base/login_register.html", context)
 
 
+@require_POST
 def logoutUser(request):
     logout(request)
     messages.info(request, "User was logged out")
@@ -97,27 +94,23 @@ def registerPage(request):
 
 
 def home(request):
-
-    user = request.user
-    if user.is_authenticated:
-        user = User.objects.get(id=request.user.id)
-    else:
-        user = None
-
+    # request.user is already available via auth middleware, no need to re-query
     context = {
-        "user": user,
+        "user": request.user if request.user.is_authenticated else None,
     }
     return render(request, "base/home.html", context)
 
 
 @login_required(login_url="login")
 def myLessons(request, pk):
-    user = User.objects.get(id=pk)
+    user = get_object_or_404(User, id=pk)
 
-    if request.user.id != user.id and request.user.is_superuser == False:
-        return HttpResponse("You are not allowed here!")
+    if request.user.id != user.id and not request.user.is_superuser:
+        return HttpResponse("You are not allowed here!", status=403)
 
-    user_lessons = UserLesson.objects.filter(user=user).order_by(Lower("lesson__title"))
+    user_lessons = UserLesson.objects.filter(user=user).select_related(
+        "lesson", "lesson__prompt_language", "lesson__translation_language"
+    ).order_by(Lower("lesson__title"))
     context = {
         "user": user,
         "my_lessons": user_lessons,
@@ -128,12 +121,15 @@ def myLessons(request, pk):
 @login_required(login_url="login")
 def myLessonDetails(request, my_lesson_id):
 
-    myLesson = UserLesson.objects.filter(id=my_lesson_id).first()
+    myLesson = UserLesson.objects.select_related(
+        "lesson", "lesson__author", "lesson__access_type", 
+        "lesson__prompt_language", "lesson__translation_language"
+    ).filter(id=my_lesson_id).first()
     if not myLesson:
-        return HttpResponse("You do not have this lesson.")
+        return HttpResponse("You do not have this lesson.", status=404)
 
-    if request.user.id != myLesson.user.id and request.user.is_superuser == False:
-        return HttpResponse("You are not allowed here!")
+    if request.user.id != myLesson.user.id and not request.user.is_superuser:
+        return HttpResponse("You are not allowed here!", status=403)
 
     # --- Ensure all words in the lesson have a corresponding UserWord for this UserLesson ---
     lesson_words = myLesson.lesson.words.all()
@@ -273,19 +269,21 @@ def myLessonDetails(request, my_lesson_id):
 @login_required(login_url="login")
 def deleteMyLesson(request, my_lesson_id):
     myLesson = (
-        UserLesson.objects.filter(id=my_lesson_id).select_related("lesson").first()
+        UserLesson.objects.filter(id=my_lesson_id)
+        .select_related("lesson", "lesson__author", "lesson__access_type")
+        .first()
     )
     if not myLesson:
-        return HttpResponse("You do not have this lesson.")
+        return HttpResponse("You do not have this lesson.", status=404)
 
     user = request.user
     lesson = myLesson.lesson
-    is_author = hasattr(lesson, "author") and lesson.author == user
+    is_author = lesson.author == user
     is_private = lesson.access_type.name == "private"
 
     # Only the owner of the myLesson or superuser can delete
     if user.id != myLesson.user.id and not user.is_superuser:
-        return HttpResponse("You are not allowed here!")
+        return HttpResponse("You are not allowed here!", status=403)
 
     if request.method == "POST":
         action = request.POST.get("action")
@@ -317,15 +315,17 @@ def deleteMyLesson(request, my_lesson_id):
 @login_required(login_url="login")
 def myWordDetails(request, my_word_id):
 
-    myWord = UserWord.objects.filter(id=my_word_id).first()
+    myWord = UserWord.objects.select_related(
+        "user_lesson", "user_lesson__user", "word"
+    ).filter(id=my_word_id).first()
     if not myWord:
-        return HttpResponse("You do not have this word in your lesson.")
+        return HttpResponse("You do not have this word in your lesson.", status=404)
 
     if (
         request.user.id != myWord.user_lesson.user.id
-        and request.user.is_superuser == False
+        and not request.user.is_superuser
     ):
-        return HttpResponse("You are not allowed here!")
+        return HttpResponse("You are not allowed here!", status=403)
 
     context = {
         "my_word": myWord,
@@ -357,20 +357,20 @@ def lessonsRepository(request):
 def lessonDetails(request, lesson_id):
 
     # This view will display the lesson overview
-    lesson = Lesson.objects.get(id=lesson_id)
-    if not lesson:
-        return HttpResponse("Lesson not found")
+    lesson = get_object_or_404(
+        Lesson.objects.select_related(
+            "author", "access_type", "prompt_language", "translation_language"
+        ),
+        id=lesson_id
+    )
     if lesson.access_type.name == "private":
-        return HttpResponse("This lesson is not public")
+        return HttpResponse("This lesson is not public", status=403)
 
     user = request.user
     if user.is_authenticated:
         can_import = not UserLesson.objects.filter(user=user, lesson=lesson).exists()
     else:
         can_import = False
-
-    if lesson.access_type.name == "private":
-        return HttpResponse("This lesson is private and cannot be imported.")
 
     lessonRatings = Rating.objects.filter(lesson=lesson)
     rating_count = lessonRatings.count()
@@ -398,16 +398,11 @@ def lessonDetails(request, lesson_id):
 def rateLesson(request, lesson_id):
 
     rateLessonForm = RateLessonForm()
+    lesson = get_object_or_404(Lesson, id=lesson_id)
 
     # This view will handle the rating of a lesson
     if request.method == "POST":
-        lesson = Lesson.objects.get(id=lesson_id)
-        if not lesson:
-            return HttpResponse("Lesson not found")
-
         user = request.user
-        if not user.is_authenticated:
-            return HttpResponse("You must be logged in to rate a lesson.")
 
         form = RateLessonForm(request.POST)
         if form.is_valid():
@@ -438,7 +433,7 @@ def rateLesson(request, lesson_id):
 
     context = {
         "rate_lesson_form": rateLessonForm,
-        "lesson": Lesson.objects.get(id=lesson_id),
+        "lesson": lesson,
     }
     return render(request, "base/rate_lesson.html", context)
 
@@ -446,12 +441,13 @@ def rateLesson(request, lesson_id):
 def wordDetails(request, lesson_id, prompt):
 
     # This view will display the word details
-    lesson = Lesson.objects.get(id=lesson_id)
+    lesson = get_object_or_404(
+        Lesson.objects.select_related("access_type"),
+        id=lesson_id
+    )
     if lesson.access_type.name == "private":
-        return HttpResponse("This lesson is not public")
-    word = Word.objects.get(prompt=prompt, lesson=lesson)
-    if not word:
-        return HttpResponse("Word not found")
+        return HttpResponse("This lesson is not public", status=403)
+    word = get_object_or_404(Word, prompt=prompt, lesson=lesson)
 
     context = {
         "lesson": lesson,
@@ -461,34 +457,32 @@ def wordDetails(request, lesson_id, prompt):
 
 
 @login_required(login_url="login")
+@transaction.atomic
 def importLesson(request, lesson_id):
-    try:
-        lesson = Lesson.objects.get(id=lesson_id)
-        user = request.user
+    lesson = get_object_or_404(Lesson, id=lesson_id)
+    user = request.user
 
-        if UserLesson.objects.filter(user=user, lesson=lesson).exists():
-            return HttpResponse("You have already imported this lesson.")
+    if UserLesson.objects.filter(user=user, lesson=lesson).exists():
+        return HttpResponse("You have already imported this lesson.", status=400)
 
-        if lesson.access_type.name == "private":
-            return HttpResponse("This lesson is private and cannot be imported.")
+    if lesson.access_type.name == "private":
+        return HttpResponse("This lesson is private and cannot be imported.", status=403)
 
-        newLesson = UserLesson.objects.create(
-            user=user, lesson=lesson, target_progress=0
-        )
+    newLesson = UserLesson.objects.create(
+        user=user, lesson=lesson, target_progress=3
+    )
 
-        words = Word.objects.filter(lesson=lesson)
-        for word in words:
-            UserWord.objects.create(
-                user_lesson=newLesson, word=word, current_progress=0, notes=""
-            )
-        lesson.changes_log = (
-            lesson.changes_log + "\n" if lesson.changes_log else ""
-        ) + f"{timezone.now()} Lesson imported by {user.username}"
-        lesson.save()
+    words = Word.objects.filter(lesson=lesson)
+    UserWord.objects.bulk_create([
+        UserWord(user_lesson=newLesson, word=word, current_progress=0, notes="")
+        for word in words
+    ])
+    lesson.changes_log = (
+        lesson.changes_log + "\n" if lesson.changes_log else ""
+    ) + f"{timezone.now()} Lesson imported by {user.username}"
+    lesson.save()
 
-        return redirect("my-lessons", pk=user.id)
-    except Exception as e:
-        return HttpResponse(f"Error: {e}")
+    return redirect("my-lessons", pk=user.id)
 
 
 @login_required(login_url="login")
@@ -534,16 +528,18 @@ def createLesson(request):
 @transaction.atomic
 def copyLesson(request, my_lesson_id):
 
-    myLesson = UserLesson.objects.filter(id=my_lesson_id).first()
+    myLesson = UserLesson.objects.select_related(
+        "lesson", "lesson__access_type", "lesson__prompt_language", "lesson__translation_language"
+    ).filter(id=my_lesson_id).first()
     if not myLesson:
-        return HttpResponse("You do not have this lesson.")
+        return HttpResponse("You do not have this lesson.", status=404)
 
-    if request.user.id != myLesson.user.id and request.user.is_superuser == False:
-        return HttpResponse("You are not allowed here!")
+    if request.user.id != myLesson.user.id and not request.user.is_superuser:
+        return HttpResponse("You are not allowed here!", status=403)
 
     # Check if the lesson is private
     if myLesson.lesson.access_type.name == "private":
-        return HttpResponse("You cannot copy a private lesson.")
+        return HttpResponse("You cannot copy a private lesson.", status=403)
 
     # Create a new lesson based on the existing one
     lesson = myLesson.lesson
@@ -591,23 +587,85 @@ def copyLesson(request, my_lesson_id):
     return redirect("my-lesson-details", my_lesson_id=new_user_lesson.id)
 
 
+
+@login_required(login_url="login")
+@transaction.atomic
+def importAndCopyLesson(request, lesson_id):
+    lesson = get_object_or_404(
+        Lesson.objects.select_related(
+            "access_type", "prompt_language", "translation_language"
+        ),
+        id=lesson_id
+    )
+    user = request.user
+
+    if lesson.access_type.name == "private":
+        return HttpResponse("This lesson is private and cannot be imported.", status=403)
+
+    # Create a new lesson as a copy
+    new_lesson = Lesson(
+        title=lesson.title,
+        description=lesson.description,
+        prompt_language=lesson.prompt_language,
+        translation_language=lesson.translation_language,
+        author=user,
+        access_type=AccessType.objects.get(name="private"),  # Set to private
+        original_lesson=lesson,  # Link to the original
+        changes_log="",
+    )
+    new_lesson.save()
+
+    # Create UserLesson for the new lesson
+    new_user_lesson = UserLesson.objects.create(user=user, lesson=new_lesson)
+
+    # Copy words to the new lesson using bulk operations
+    words = list(lesson.words.all())
+    new_words = Word.objects.bulk_create([
+        Word(
+            lesson=new_lesson,
+            prompt=word.prompt,
+            translation=word.translation,
+            usage=word.usage,
+            hint=word.hint,
+        )
+        for word in words
+    ])
+    UserWord.objects.bulk_create([
+        UserWord(
+            user_lesson=new_user_lesson,
+            word=new_word,
+            current_progress=0,
+            notes="",
+        )
+        for new_word in new_words
+    ])
+
+    # Update original lesson's changes_log
+    lesson.changes_log = (
+        lesson.changes_log + "\n" if lesson.changes_log else ""
+    ) + f"{timezone.now()} Lesson imported and copied by {user.username}"
+    lesson.save()
+
+    messages.success(request, "Lesson imported and copied successfully!")
+    return redirect("edit-lesson", my_lesson_id=new_user_lesson.id)
+
+
 @login_required(login_url="login")
 @transaction.atomic
 def editLesson(request, my_lesson_id):
-    myLesson = UserLesson.objects.filter(id=my_lesson_id).first()
+    myLesson = UserLesson.objects.select_related(
+        "lesson", "lesson__author", "lesson__access_type",
+        "lesson__prompt_language", "lesson__translation_language"
+    ).filter(id=my_lesson_id).first()
 
     if not myLesson:
-        return HttpResponse("You do not have this lesson.")
+        return HttpResponse("You do not have this lesson.", status=404)
 
-    if request.user.id != myLesson.user.id and request.user.is_superuser == False:
-        return HttpResponse("You are not allowed here!")
+    if request.user.id != myLesson.user.id and not request.user.is_superuser:
+        return HttpResponse("You are not allowed here!", status=403)
 
-    if not (
-        request.user
-        == myLesson.lesson.author
-        # or myLesson.lesson.access_type.name in ["write"]
-    ):
-        return HttpResponse("You do not have rights to edit this lesson!")
+    if request.user != myLesson.lesson.author:
+        return HttpResponse("You do not have rights to edit this lesson!", status=403)
 
     lesson_instance = myLesson.lesson
 
@@ -723,22 +781,26 @@ def resetProgress(request, my_lesson_id):
 @login_required(login_url="login")
 @transaction.atomic
 def editWord(request, my_word_id):
-    myWord = UserWord.objects.filter(id=my_word_id).first()
+    myWord = UserWord.objects.select_related(
+        "user_lesson", "user_lesson__user", "user_lesson__lesson",
+        "user_lesson__lesson__author", "user_lesson__lesson__access_type",
+        "user_lesson__lesson__prompt_language", "word"
+    ).filter(id=my_word_id).first()
 
     if not myWord:
-        return HttpResponse("You do not have this word in your lesson.")
+        return HttpResponse("You do not have this word in your lesson.", status=404)
 
     if (
         request.user.id != myWord.user_lesson.user.id
-        and request.user.is_superuser == False
+        and not request.user.is_superuser
     ):
-        return HttpResponse("You are not allowed here!")
+        return HttpResponse("You are not allowed here!", status=403)
 
     if not (
         request.user == myWord.user_lesson.lesson.author
         or myWord.user_lesson.lesson.access_type.name in ["write"]
     ):
-        return HttpResponse("You do not have rights to edit this lesson!")
+        return HttpResponse("You do not have rights to edit this lesson!", status=403)
 
     # Detect if coming from practice session
     next_url = request.GET.get("next")
@@ -830,23 +892,26 @@ def editWord(request, my_word_id):
 @transaction.atomic
 def deleteWord(request, my_word_id):
 
-    myWord = UserWord.objects.filter(id=my_word_id).first()
+    myWord = UserWord.objects.select_related(
+        "user_lesson", "user_lesson__user", "user_lesson__lesson",
+        "user_lesson__lesson__author", "user_lesson__lesson__access_type", "word"
+    ).filter(id=my_word_id).first()
     user = request.user
 
     if not myWord:
-        return HttpResponse("You do not have this word in your lesson.")
+        return HttpResponse("You do not have this word in your lesson.", status=404)
 
     myLesson = myWord.user_lesson
     wordNameToDelete = myWord.word.prompt
 
-    if user.id != myWord.user_lesson.user.id and user.is_superuser == False:
-        return HttpResponse("You are not allowed here!")
+    if user.id != myWord.user_lesson.user.id and not user.is_superuser:
+        return HttpResponse("You are not allowed here!", status=403)
 
     if not (
         user == myWord.user_lesson.lesson.author
         or myWord.user_lesson.lesson.access_type.name in ["write"]
     ):
-        return HttpResponse("You do not have rights to edit this lesson!")
+        return HttpResponse("You do not have rights to edit this lesson!", status=403)
 
     if request.method == "POST":
 
@@ -998,14 +1063,15 @@ def highlight_differences(user_answer, correct_answer):
     """
     Returns HTML with mismatches highlighted.
     """
+    from django.utils.html import escape
     matcher = difflib.SequenceMatcher(None, user_answer, correct_answer)
     result = []
     for opcode, a0, a1, b0, b1 in matcher.get_opcodes():
         if opcode == "equal":
-            result.append(correct_answer[b0:b1])
+            result.append(escape(correct_answer[b0:b1]))
         else:
-            # Highlight mismatched parts from the correct answer
-            result.append(f'<span class="diff">{correct_answer[b0:b1]}</span>')
+            # Highlight mismatched parts from the correct answer (escape to prevent XSS)
+            result.append(f'<span class="diff">{escape(correct_answer[b0:b1])}</span>')
     return "".join(result)
 
 
@@ -1097,7 +1163,10 @@ def import_lesson_json(request):
 
 @login_required
 def export_lesson_json(request, lesson_id):
-    lesson = Lesson.objects.get(id=lesson_id)
+    lesson = get_object_or_404(
+        Lesson.objects.select_related("author", "prompt_language", "translation_language", "access_type"),
+        id=lesson_id
+    )
 
     # Only allow the author or superuser to export
     if request.user != lesson.author and not request.user.is_superuser:

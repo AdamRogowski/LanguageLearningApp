@@ -27,7 +27,9 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
             user=instance, display_name=instance.get_full_name() or instance.username
         )
     else:
-        instance.userprofile.save()
+        # Only save if profile exists (avoid AttributeError)
+        if hasattr(instance, 'userprofile'):
+            instance.userprofile.save()
 
 
 class AccessType(models.Model):

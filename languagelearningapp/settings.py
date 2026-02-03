@@ -21,12 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-qf^+*3w9-!)ed20%d6(tqr9a0i9nenco!$xw2fih*c@-k6s@=k"
+SECRET_KEY = config("SECRET_KEY", default="django-insecure-qf^+*3w9-!)ed20%d6(tqr9a0i9nenco!$xw2fih*c@-k6s@=k")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config("DEBUG", default=True, cast=bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="", cast=lambda v: [s.strip() for s in v.split(",") if s.strip()])
 
 
 # Application definition
@@ -155,5 +155,3 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Optional: Reset session timer on every request (default is True)
 SESSION_SAVE_EVERY_REQUEST = True
-
-ALLOWED_HOSTS = ["*"]

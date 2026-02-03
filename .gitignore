@@ -14,4 +14,4 @@ staticfiles/
 Thumbs.db
 
 # Never track environment variables
-.env
+_env

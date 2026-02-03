@@ -44,7 +44,7 @@ urlpatterns = [
     ),
     path(
         "import-lesson/<int:lesson_id>/",
-        views.importLesson,
+        views.importAndCopyLesson,
         name="import-lesson",
     ),
     path("create-lesson/", views.createLesson, name="create-lesson"),
