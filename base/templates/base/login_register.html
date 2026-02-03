@@ -32,6 +32,8 @@
         <input type="submit" value="Login" />
     </form>
 
+    <a href="{% url 'password_reset' %}">Forgot your password?</a>
+
     <p>Haven't registered yet?</p>
     <a href="{% url 'register' %}">Register</a>
 
@@ -53,7 +55,5 @@
 </div>
 
 {% endif %}
-
-<a href="{% url 'password_reset' %}">Forgot your password?</a>
 
 {% endblock content %}

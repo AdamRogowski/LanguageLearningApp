@@ -1,3 +1,122 @@
-body{
-    background-color: azure;
+body {
+    background-color: white;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: white;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+}
+
+.logo img {
+    height: 80px;
+}
+
+.user-menu {
+    position: relative;
+}
+
+.user-menu-toggle {
+    display: none;
+}
+
+.user-menu-icon {
+    font-size: 24px;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+.user-menu-icon:hover {
+    background-color: #f0f0f0;
+}
+
+.user-menu-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    min-width: 200px;
+    z-index: 1001;
+}
+
+.user-menu-toggle:checked + .user-menu-icon + .user-menu-content {
+    display: block;
+}
+
+.user-menu-content p {
+    margin: 10px 15px;
+    font-weight: bold;
+}
+
+.user-menu-content a,
+.user-menu-content form {
+    display: block;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: #333;
+    transition: background-color 0.3s;
+}
+
+.user-menu-content a:hover,
+.user-menu-content button:hover {
+    background-color: #f0f0f0;
+}
+
+.user-menu-content button {
+    width: 100%;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    font-size: inherit;
+}
+
+.login-link {
+    padding: 10px 20px;
+    text-decoration: none;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.login-link:hover {
+    background-color: #f0f0f0;
+}
+
+main {
+    margin-top: 120px; /* Adjust based on header height */
+    margin-bottom: 60px; /* Adjust based on footer height */
+    overflow-y: auto;
+    max-height: calc(100vh - 180px); /* 100vh minus header and footer heights */
+    padding: 20px;
+}
+
+footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: white;
+    text-align: center;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
 }

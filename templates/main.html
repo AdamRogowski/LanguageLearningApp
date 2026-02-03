@@ -11,7 +11,6 @@
 <body>
 
     <header>
-        <h1>Language Learning App</h1>
     
     {% include 'navbar.html' %}
 
@@ -57,9 +56,11 @@
     {% endif %}
     </header>
 
-    {% block content %}
+    <main>
+        {% block content %}
 
-    {% endblock %}
+        {% endblock %}
+    </main>
     <footer>
         <hr>
         <p>&copy; 2025 Language Learning App</p>

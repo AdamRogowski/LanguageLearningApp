@@ -127,8 +127,8 @@ def test_home_authenticated(client, user):
 @pytest.mark.django_db
 def test_home_unauthenticated(client):
     response = client.get(reverse("home"))
-    assert response.status_code == 200
-    assert "base/home.html" in [t.name for t in response.templates]
+    assert response.status_code == 302
+    assert response.url == "/login/?next=/"
 
 
 @pytest.mark.django_db
@@ -191,15 +191,15 @@ def test_delete_my_lesson_post_delete_mylesson(client, user, user_lesson):
 @pytest.mark.django_db
 def test_lessons_repository(client, lesson, access_type_write):
     response = client.get(reverse("lessons-repository"))
-    assert response.status_code == 200
-    assert "base/lessons_repository.html" in [t.name for t in response.templates]
+    assert response.status_code == 302
+    assert response.url == "/login/?next=/lessons-repository/"
 
 
 @pytest.mark.django_db
 def test_lesson_details_public(client, lesson, user, access_type_private, language):
     response = client.get(reverse("lesson-details", kwargs={"lesson_id": lesson.id}))
-    assert response.status_code == 200
-    assert "base/lesson_details.html" in [t.name for t in response.templates]
+    assert response.status_code == 302
+    assert response.url == f"/login/?next=/lessons-repository/{lesson.id}/"
     private_lesson = Lesson.objects.create(
         title="Private",
         description="desc",
@@ -211,7 +211,8 @@ def test_lesson_details_public(client, lesson, user, access_type_private, langua
     response = client.get(
         reverse("lesson-details", kwargs={"lesson_id": private_lesson.id})
     )
-    assert b"This lesson is not public" in response.content
+    assert response.status_code == 302
+    assert response.url == f"/login/?next=/lessons-repository/{private_lesson.id}/"
 
 
 @pytest.mark.django_db
@@ -334,6 +335,9 @@ def test_settings_view_post(client, user):
         "display_name": "Johnny",
         "preferred_language": "English",
         "receive_notifications": True,
+        "target_progress": 4,
+        "practice_window": 15,
+        "allowed_error_margin": 2,
     }
     response = client.post(reverse("settings"), data)
     assert response.status_code == 302  # Redirect to profile

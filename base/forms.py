@@ -110,7 +110,7 @@ class RateLessonForm(forms.Form):
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ["display_name", "preferred_language", "receive_notifications"]
+        fields = ["display_name", "preferred_language", "receive_notifications", "target_progress", "practice_window", "allowed_error_margin"]
 
 
 class UserForm(forms.ModelForm):

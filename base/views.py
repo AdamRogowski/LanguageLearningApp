@@ -92,7 +92,7 @@ def registerPage(request):
     context = {"form": form, "page": page}
     return render(request, "base/login_register.html", context)
 
-
+@login_required(login_url="login")
 def home(request):
     # request.user is already available via auth middleware, no need to re-query
     context = {
@@ -332,7 +332,7 @@ def myWordDetails(request, my_word_id):
     }
     return render(request, "base/my_word_details.html", context)
 
-
+@login_required(login_url="login")
 def lessonsRepository(request):
 
     # This view will display the lessons repository
@@ -353,7 +353,7 @@ def lessonsRepository(request):
     }
     return render(request, "base/lessons_repository.html", context)
 
-
+@login_required(login_url="login")
 def lessonDetails(request, lesson_id):
 
     # This view will display the lesson overview
@@ -437,7 +437,7 @@ def rateLesson(request, lesson_id):
     }
     return render(request, "base/rate_lesson.html", context)
 
-
+@login_required(login_url="login")
 def wordDetails(request, lesson_id, prompt):
 
     # This view will display the word details
@@ -469,7 +469,9 @@ def importLesson(request, lesson_id):
         return HttpResponse("This lesson is private and cannot be imported.", status=403)
 
     newLesson = UserLesson.objects.create(
-        user=user, lesson=lesson, target_progress=3
+        user=user, lesson=lesson, target_progress=user.userprofile.target_progress,
+        practice_window=user.userprofile.practice_window,
+        allowed_error_margin=user.userprofile.allowed_error_margin,
     )
 
     words = Word.objects.filter(lesson=lesson)
@@ -518,7 +520,11 @@ def createLesson(request):
             messages.success(request, "Lesson created successfully!")
             return redirect("my-lesson-details", my_lesson_id=myLesson.id)
     else:
-        user_lesson_form = UserLessonForm()
+        user_profile = request.user.userprofile
+        user_lesson_form = UserLessonForm(initial={
+            'practice_window': user_profile.practice_window,
+            'allowed_error_margin': user_profile.allowed_error_margin,
+        })
 
     context = {"lesson_form": user_lesson_form}
     return render(request, "base/create_lesson.html", context)
@@ -616,7 +622,12 @@ def importAndCopyLesson(request, lesson_id):
     new_lesson.save()
 
     # Create UserLesson for the new lesson
-    new_user_lesson = UserLesson.objects.create(user=user, lesson=new_lesson)
+    new_user_lesson = UserLesson.objects.create(
+        user=user, lesson=new_lesson,
+        target_progress=user.userprofile.target_progress,
+        practice_window=user.userprofile.practice_window,
+        allowed_error_margin=user.userprofile.allowed_error_margin,
+    )
 
     # Copy words to the new lesson using bulk operations
     words = list(lesson.words.all())
@@ -683,6 +694,7 @@ def editLesson(request, my_lesson_id):
         "access_type": lesson_instance.access_type,
         "target_progress": myLesson.target_progress,
         "practice_window": myLesson.practice_window,
+        "allowed_error_margin": myLesson.allowed_error_margin,
     }
 
     if request.method == "POST":
@@ -940,14 +952,14 @@ def deleteWord(request, my_word_id):
 # ------------Practice Views------------#
 
 
-@login_required
+@login_required(login_url="login")
 def start_practice(request, user_lesson_id, mode="normal"):
     user_lesson = get_object_or_404(UserLesson, id=user_lesson_id, user=request.user)
     initialize_practice_session(request, user_lesson, mode)
     return redirect("practice", user_lesson_id=user_lesson_id, mode=mode)
 
 
-@login_required
+@login_required(login_url="login")
 def practice(request, user_lesson_id, mode="normal"):
     window_key, pool_key, answer_key = get_practice_session_keys(user_lesson_id, mode)
     window = request.session.get(window_key, [])
@@ -999,7 +1011,7 @@ def practice(request, user_lesson_id, mode="normal"):
     )
 
 
-@login_required
+@login_required(login_url="login")
 def practice_feedback(request, user_lesson_id, mode="normal"):
     window_key, pool_key, answer_key = get_practice_session_keys(user_lesson_id, mode)
     window = request.session.get(window_key, [])
@@ -1045,7 +1057,7 @@ def practice_feedback(request, user_lesson_id, mode="normal"):
     return render(request, "base/practice_feedback.html", context)
 
 
-@login_required
+@login_required(login_url="login")
 def cancel_practice(request, user_lesson_id):
     # Cancel all possible practice sessions for this lesson (all modes)
     for mode in PRACTICE_MODES:
@@ -1161,7 +1173,7 @@ def import_lesson_json(request):
     return render(request, "base/import_lesson_json.html")
 
 
-@login_required
+@login_required(login_url="login")
 def export_lesson_json(request, lesson_id):
     lesson = get_object_or_404(
         Lesson.objects.select_related("author", "prompt_language", "translation_language", "access_type"),
@@ -1259,7 +1271,7 @@ def generate_lesson_audio(request, my_lesson_id):
 # ---------------Profile Views---------------#
 
 
-@login_required
+@login_required(login_url="login")
 def profile_view(request):
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
     user = request.user
@@ -1274,7 +1286,7 @@ def profile_view(request):
     return render(request, "base/profile.html", context)
 
 
-@login_required
+@login_required(login_url="login")
 def settings_view(request):
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
     if request.method == "POST":

@@ -14,7 +14,9 @@ class UserProfile(models.Model):
     display_name = models.CharField(max_length=100, blank=True)
     preferred_language = models.CharField(max_length=50, blank=True)
     receive_notifications = models.BooleanField(default=True)
-    # Add more fields as needed
+    target_progress = models.PositiveIntegerField(default=3, validators=[MinValueValidator(1)])
+    practice_window = models.PositiveIntegerField(default=10, validators=[MinValueValidator(1)])
+    allowed_error_margin = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
 
     def __str__(self):
         return f"Profile of {self.user.username}"

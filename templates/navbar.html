@@ -1,19 +1,22 @@
 {% load static %}
-<a href="/">
-    <img src="{% static 'images/logo.png' %}" alt="Home" style="height: 100px;">
-</a>
+<div class="navbar">
+    <a href="/" class="logo">
+        <img src="{% static 'images/logo.png' %}" alt="Home" style="height: 80px;">
+    </a>
 
-<br>
-
-{% if user.is_authenticated %}
-    <p>Welcome, {{ user.username }}!</p>
-    <a href="{% url 'logout' %}">Logout</a>
-    <a href="{% url 'profile' %}">Profile</a>
-    <a href="{% url 'settings' %}">Settings</a>
-{% else %}
-
-
-    <a href="{% url 'login' %}">Login</a>
-{% endif %}
-
-<hr>
+    {% if user.is_authenticated %}
+    <div class="user-menu">
+        <input type="checkbox" id="user-menu-toggle" class="user-menu-toggle">
+        <label for="user-menu-toggle" class="user-menu-icon">👤</label>
+        <div class="user-menu-content">
+            <p>Welcome, {{ user.username }}!</p>
+            <a href="{% url 'profile' %}">Profile</a>
+            <a href="{% url 'settings' %}">Settings</a>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">Logout</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
