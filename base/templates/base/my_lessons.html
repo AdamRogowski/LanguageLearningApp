@@ -4,10 +4,6 @@
 <a href="{% url 'lessons-repository' %}">Search lessons repository</a>
 <br>
 
-<a href="{% url 'create-lesson' %}">
-    <button type="button">Create lesson</button>
-</a>
-
 <hr>
 
 <!-- Breadcrumb Navigation -->
@@ -27,16 +23,18 @@
     {% endfor %}
 </nav>
 
-<!-- Create New Folder Form -->
-<div class="create-directory-form">
-    <form method="POST" action="{% url 'create-directory' current_directory.id %}" style="display: inline-flex; gap: 8px; align-items: center;">
-        {% csrf_token %}
-        <input type="text" name="name" placeholder="New folder name" required maxlength="255">
-        <button type="submit">📁 Create Folder</button>
-    </form>
-</div>
-
 <hr>
+
+<!-- Add New Dropdown -->
+<div class="add-new-dropdown">
+    <div class="dropdown">
+        <button class="dropdown-btn add-btn" data-menu="add-menu">&#43;</button>
+        <div class="dropdown-menu" id="add-menu">
+            <a href="{% url 'create-lesson' %}">Create Lesson</a>
+            <a href="{% url 'create-directory' current_directory.id %}">Create Folder</a>
+        </div>
+    </div>
+</div>
 
 <!-- Hidden form for drag-and-drop operations -->
 <form id="move-item-form" method="POST" style="display: none;">
@@ -61,9 +59,14 @@
                 <span class="directory-icon">📁</span>
                 <a href="{% url 'my-lessons-directory' user.id subdir.id %}" class="directory-link">{{ subdir.name }}</a>
                 <span class="directory-actions">
-                    <a href="{% url 'rename-directory' subdir.id %}" title="Rename">✏️</a>
-                    <a href="{% url 'move-directory' subdir.id %}" title="Move">📦</a>
-                    <a href="{% url 'delete-directory' subdir.id %}" title="Delete">🗑️</a>
+                    <div class="dropdown">
+                        <button class="dropdown-btn" data-menu="dir-{{ subdir.id }}">&#9881;</button>
+                        <div class="dropdown-menu" id="dir-{{ subdir.id }}">
+                            <a href="{% url 'rename-directory' subdir.id %}">Rename</a>
+                            <a href="{% url 'move-directory' subdir.id %}">Move</a>
+                            <a href="{% url 'delete-directory' subdir.id %}">Delete</a>
+                        </div>
+                    </div>
                 </span>
             </div>
         {% endfor %}
@@ -82,7 +85,17 @@
                 <span class="lesson-icon">📖</span>
                 <a href="{% url 'my-lesson-details' my_lesson.id %}">{{ my_lesson.lesson.title }}</a>
                 <span class="lesson-actions">
-                    <a href="{% url 'move-lesson' my_lesson.id %}" title="Move to folder">📦</a>
+                    <div class="dropdown">
+                        <button class="dropdown-btn" data-menu="lesson-{{ my_lesson.id }}">&#9881;</button>
+                        <div class="dropdown-menu" id="lesson-{{ my_lesson.id }}">
+                            {% if user == my_lesson.lesson.author or my_lesson.lesson.access_type.name == "write" %}
+                            <a href="{% url 'edit-lesson' my_lesson.id %}">Edit</a>
+                            {% else %}
+                            <span class="disabled">Edit</span>
+                            {% endif %}
+                            <a href="{% url 'move-lesson' my_lesson.id %}">Move</a>
+                        </div>
+                    </div>
                 </span>
             </div>    
         {% endfor %}
@@ -151,6 +164,75 @@
         opacity: 1;
     }
     
+    /* Dropdown Styles */
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    .dropdown-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1.2em;
+        color: #999;
+        padding: 0;
+        line-height: 1;
+    }
+    .dropdown-btn:hover {
+        color: #666;
+    }
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        right: 0;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        z-index: 1000;
+        min-width: 120px;
+    }
+    .dropdown-menu a {
+        display: block;
+        padding: 8px 12px;
+        text-decoration: none;
+        color: #333;
+        white-space: nowrap;
+    }
+    .dropdown-menu a:hover {
+        background: #f5f5f5;
+    }
+    .dropdown-menu .disabled {
+        color: #ccc;
+        cursor: not-allowed;
+        padding: 8px 12px;
+        display: block;
+    }
+    
+    /* Add New Dropdown Styles */
+    .add-new-dropdown {
+        margin: 15px 0;
+        text-align: left;
+    }
+    .add-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1.5em;
+        color: #999;
+        padding: 10px;
+        line-height: 1;
+    }
+    .add-btn:hover {
+        color: #666;
+    }
+    .add-new-dropdown .dropdown-menu {
+        top: 0;
+        left: 100%;
+        right: auto;
+        transform: none;
+    }
+    
     /* Drag and Drop Styles */
     .drag-handle {
         cursor: grab;
@@ -177,6 +259,27 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Dropdown functionality
+    const dropdownBtns = document.querySelectorAll('.dropdown-btn');
+    dropdownBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const menuId = this.dataset.menu;
+            const menu = document.getElementById(menuId);
+            // Hide all other menus
+            document.querySelectorAll('.dropdown-menu').forEach(m => {
+                if (m !== menu) m.style.display = 'none';
+            });
+            // Toggle this menu
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        });
+    });
+    
+    // Close menus when clicking outside
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+    });
+    
     const draggables = document.querySelectorAll('[draggable="true"]');
     const droppables = document.querySelectorAll('.droppable');
     

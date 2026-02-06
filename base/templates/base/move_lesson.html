@@ -18,7 +18,7 @@
     
     <div class="form-actions">
         <button type="submit">Move Lesson</button>
-        <a href="{% url 'my-lesson-details' user_lesson.id %}">
+        <a href="{{ cancel_url }}">
             <button type="button">Cancel</button>
         </a>
     </div>

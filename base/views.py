@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 from django.http import HttpResponse
 from django.db.models import Q  # Import Q for complex queries
@@ -1510,23 +1511,34 @@ def get_user_memory_usage(user):
 
 
 @login_required(login_url="login")
-@require_POST
 def createDirectory(request, directory_id):
     """Create a new directory within the specified parent directory."""
     parent_directory = get_object_or_404(UserDirectory, id=directory_id, user=request.user)
     
-    form = UserDirectoryForm(request.POST, user=request.user, parent_directory=parent_directory)
-    if form.is_valid():
-        directory = form.save(commit=False)
-        directory.user = request.user
-        directory.parent_directory = parent_directory
-        directory.save()
-        messages.success(request, f"Folder '{directory.name}' created successfully!")
+    if request.method == "POST":
+        form = UserDirectoryForm(request.POST, user=request.user, parent_directory=parent_directory)
+        if form.is_valid():
+            directory = form.save(commit=False)
+            directory.user = request.user
+            directory.parent_directory = parent_directory
+            directory.save()
+            messages.success(request, f"Folder '{directory.name}' created successfully!")
+            return redirect("my-lessons-directory", pk=request.user.id, directory_id=parent_directory.id)
+        else:
+            for error in form.errors.values():
+                messages.error(request, error[0])
     else:
-        for error in form.errors.values():
-            messages.error(request, error[0])
+        form = UserDirectoryForm(user=request.user, parent_directory=parent_directory)
     
-    return redirect("my-lessons-directory", pk=request.user.id, directory_id=parent_directory.id)
+    # Build breadcrumb for parent directory
+    breadcrumb_path = parent_directory.get_path()
+    
+    context = {
+        "form": form,
+        "parent_directory": parent_directory,
+        "breadcrumb_path": breadcrumb_path,
+    }
+    return render(request, "base/create_directory.html", context)
 
 
 @login_required(login_url="login")
@@ -1676,9 +1688,12 @@ def moveLesson(request, my_lesson_id):
         if user_lesson.directory:
             form.fields["directory"].initial = user_lesson.directory
     
+    cancel_url = reverse('my-lessons-directory', kwargs={'pk': request.user.id, 'directory_id': current_directory_id}) if current_directory_id else reverse('my-lessons', kwargs={'pk': request.user.id})
+    
     context = {
         "form": form,
         "user_lesson": user_lesson,
+        "cancel_url": cancel_url,
     }
     return render(request, "base/move_lesson.html", context)
 

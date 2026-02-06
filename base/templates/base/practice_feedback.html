@@ -9,15 +9,75 @@
 </h2>
 
 {% if user_word.word.prompt_audio %}
-    <audio id="prompt_audio" src="{{ user_word.word.prompt_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
+    <audio id="prompt_audio" src="{{ user_word.word.prompt_audio.url }}?v={{ user_word.word.updated|date:'U' }}" autoplay>
+        Your browser does not support the audio element.
+    </audio>
+    
+    <!-- Audio autoplay message -->
+    <div id="audio-autoplay-message" class="audio-autoplay-message" style="display: none;">
+        <div class="audio-autoplay-content">
+            Audio autoplay was blocked by your browser. Please check your browser settings to allow audio playback for this site, or click the "🔊 Play Prompt Audio" button below.
+        </div>
+    </div>
+    
     <script>
-        window.onload = function() {
+        document.addEventListener('DOMContentLoaded', function() {
             var audio = document.getElementById('prompt_audio');
+            var messageDiv = document.getElementById('audio-autoplay-message');
+            
             if (audio) {
-                audio.play();
+                // Try to play automatically
+                var playPromise = audio.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(function() {
+                        // Automatic playback started
+                        console.log('Audio autoplay successful');
+                    }).catch(function(error) {
+                        // Auto-play was prevented
+                        console.log('Audio autoplay prevented:', error);
+                        
+                        // Show the message popup
+                        if (messageDiv) {
+                            messageDiv.style.display = 'block';
+                            setTimeout(function() {
+                                messageDiv.style.display = 'none';
+                            }, 5000); // Show for 5 seconds
+                        }
+                        
+                        // Add a manual play button
+                        var playButton = document.createElement('button');
+                        playButton.textContent = '🔊 Play Prompt Audio';
+                        playButton.onclick = function() {
+                            audio.play();
+                            this.style.display = 'none';
+                        };
+                        audio.parentNode.insertBefore(playButton, audio.nextSibling);
+                    });
+                }
             }
-        }
+        });
     </script>
+    
+    <style>
+        .audio-autoplay-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(255, 193, 7, 0.95);
+            color: #000;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            min-width: 200px;
+            max-width: 350px;
+            font-size: 1rem;
+        }
+        .audio-autoplay-content {
+            font-weight: 500;
+        }
+    </style>
 {% endif %}
 
 {% if correct %}

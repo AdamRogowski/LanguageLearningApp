@@ -1,0 +1,31 @@
+{% extends "main.html" %}
+
+{% block content %}
+
+<!-- Breadcrumb Navigation -->
+<nav class="breadcrumb-nav">
+    <span>📁 </span>
+    {% for dir in breadcrumb_path %}
+        {% if forloop.last %}
+            <strong>{{ dir.name }}</strong>
+        {% else %}
+            {% if dir.is_root %}
+                <a href="{% url 'my-lessons' user.id %}">{{ dir.name }}</a>
+            {% else %}
+                <a href="{% url 'my-lessons-directory' user.id dir.id %}">{{ dir.name }}</a>
+            {% endif %}
+            <span> / </span>
+        {% endif %}
+    {% endfor %}
+</nav>
+
+<h1>Create New Folder</h1>
+
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Create Folder</button>
+    <a href="{% url 'my-lessons-directory' user.id parent_directory.id %}">Cancel</a>
+</form>
+
+{% endblock %}
