@@ -1,0 +1,60 @@
+{% extends 'base/layouts/my_lessons_layout.html' %}
+
+{% block tab_content %}
+
+<h1><a href="{% url 'lessons-repository' %}">Lessons Repository</a></h1>
+<h2><a href="{% url 'lesson-details' lesson.id %}">{{ lesson.title }}</a></h2>
+{% if lesson.original_lesson %}
+    {% if lesson.original_lesson.access_type.name == "private" %}
+        <h3>Original Lesson: {{ lesson.original_lesson.title }} (private)</h3>
+    {% else %}
+        <h3>Original Lesson: <a href="{% url 'lesson-details' lesson.original_lesson.id %}">{{ lesson.original_lesson.title }}</a></h3>
+    {% endif %}
+{% endif %}
+
+published by {{ lesson.author.userprofile.display_name }}
+<br>
+access rights: {{lesson.access_type.name}}
+<br>
+prompt language: {{lesson.prompt_language.name}}
+<br>
+translation language: {{lesson.translation_language.name}}
+<br>
+published on {{ lesson.created }}
+<br>
+last updated on {{ lesson.updated }}
+<br>
+rating {{ average_rating }} ({{ rating_count }} ratings)
+
+<form action="{% url 'rate-lesson' lesson.id %}" method="get" style="display:inline;">
+    <button type="submit">Rate lesson</button>
+</form>
+<br>
+last updated on {{ lesson.updated }}
+<br>
+
+<h5>{{ lesson.description }}</h5>
+
+<hr>
+
+
+ 
+
+<div class="lesson-container">
+
+    {% if request.user.is_authenticated %}
+        <form action="{% url 'import-lesson' lesson.id %}" method="get">
+            <button type="submit" {% if not can_import %}disabled{% endif %}  >Import Lesson</button>
+        </form>
+    {% endif %}
+
+
+    {% for word in words %}
+        <div>
+            <a href="{% url 'word-details' lesson.id word.prompt %}">{{ word.prompt }} -> {{ word.translation }}</a>
+        </div>    
+    {% endfor %}
+
+</div>  
+
+{% endblock tab_content %}

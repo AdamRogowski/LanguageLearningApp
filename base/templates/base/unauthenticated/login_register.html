@@ -1,0 +1,56 @@
+{% extends 'base/layouts/unauthenticated.html' %}
+{% load static %}
+
+{% block unauthenticated_content %}
+<div class="login-register-container">
+    <div class="logo-large">
+        <img src="{% static 'images/logo.png' %}" alt="Language Learning App">
+        <h1>Language Learning App</h1>
+    </div>
+
+    {% if page == 'login' %}
+    <div class="login-form">
+        <h2>Login</h2>
+        <form method="POST" action="">
+            {% csrf_token %}
+            
+            <input type="text" name="username" id="username" placeholder="Username" autofocus />
+            <input type="password" name="password" placeholder="Password" id="password-input" />
+            
+            <label class="show-password-label">
+                <input type="checkbox" onclick="togglePassword()"> Show Password
+            </label>
+
+            <input type="submit" value="Login" />
+        </form>
+        <div class="links">
+            <a href="{% url 'password_reset' %}">Forgot your password?</a>
+            <p>Haven't registered yet? <a href="{% url 'register' %}">Register</a></p>
+        </div>
+    </div>
+    {% elif page == 'register' %}
+    <div class="register-form">
+        <h2>Register</h2>
+        <form method="POST", action="">
+            {% csrf_token %}
+            {{form.as_p}}
+            <input type="submit" value="Register" />
+        </form>
+        <div class="links">
+            <p>Already registered? <a href="{% url 'login' %}">Login</a></p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function togglePassword() {
+    var x = document.getElementById("password-input");
+    if (x.type === "password") {
+        x.type = "text";
+    } else {
+        x.type = "password";
+    }
+}
+</script>
+{% endblock %}

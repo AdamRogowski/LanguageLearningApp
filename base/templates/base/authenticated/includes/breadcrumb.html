@@ -1,0 +1,43 @@
+<!-- Breadcrumb Navigation Include -->
+{# Usage: include 'base/includes/breadcrumb.html' #}
+{# Requires context: breadcrumb_path, request.user #}
+
+<nav class="breadcrumb-nav">
+    <span>📁 </span>
+    {% for dir in breadcrumb_path %}
+        {% if dir.is_root %}
+            <a href="{% url 'my-lessons' %}">{{ dir.name }}</a>
+        {% else %}
+            <a href="{% url 'my-lessons-directory' dir.id %}">{{ dir.name }}</a>
+        {% endif %}
+        {% if not forloop.last %}
+            <span> / </span>
+        {% endif %}
+    {% endfor %}
+</nav>
+
+<style>
+    .breadcrumb-nav {
+        padding: 12px 20px;
+        margin: 0;
+        font-size: 0.95em;
+        background: white;
+        border-bottom: 1px solid #e0e0e0;
+        position: sticky;
+        top: 135px; /* Below header (80px) + tabs (~55px) */
+        z-index: 850;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    }
+    .breadcrumb-nav a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .breadcrumb-nav a:hover {
+        text-decoration: underline;
+        color: #5568d3;
+    }
+    .breadcrumb-nav span {
+        color: #999;
+    }
+</style>

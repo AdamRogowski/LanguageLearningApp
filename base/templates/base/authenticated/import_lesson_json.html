@@ -1,0 +1,35 @@
+{% extends 'base/layouts/user_layout.html' %}
+{% block tab_content %}
+<h2>Import Lesson from JSON</h2>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="file" name="json_file" accept=".json" required>
+    <button type="submit">Import</button>
+</form>
+
+<h3>Expected JSON Format Example:</h3>
+<pre style="background:#f8f8f8; border:1px solid #ccc; padding:1em; overflow:auto;">
+{
+  "title": "Lesson Title",
+  "description": "Description",
+  "prompt_language": "English",
+  "translation_language": "Polish",
+  "access_type": "private", //{"private", "readonly", or "write"}
+  "words": [
+    {
+      "prompt": "prompt1",
+      "translation": "translation1",
+      "usage": "Usage example for prompt1.",
+      "hint": "hint for prompt1"
+    },
+    {
+      "prompt": "prompt2",
+      "translation": "translation2",
+      "usage": "Usage example for prompt2.",
+      "hint": "hint for prompt2"
+    }
+    // Add more words as needed
+  ]
+}
+</pre>
+{% endblock tab_content %}

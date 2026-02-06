@@ -69,7 +69,7 @@ def loginPage(request):
             messages.error(request, "Invalid username or password.")
 
     context = {"page": page}
-    return render(request, "base/login_register.html", context)
+    return render(request, "base/unauthenticated/login_register.html", context)
 
 
 @require_POST
@@ -95,23 +95,17 @@ def registerPage(request):
             messages.error(request, "An error occurred during registration")
 
     context = {"form": form, "page": page}
-    return render(request, "base/login_register.html", context)
+    return render(request, "base/unauthenticated/login_register.html", context)
 
 @login_required(login_url="login")
 def home(request):
-    # request.user is already available via auth middleware, no need to re-query
-    context = {
-        "user": request.user if request.user.is_authenticated else None,
-    }
-    return render(request, "base/home.html", context)
+    # Redirect authenticated users directly to My Lessons (the main workspace)
+    return redirect("my-lessons")
 
 
 @login_required(login_url="login")
-def myLessons(request, pk, directory_id=None):
-    user = get_object_or_404(User, id=pk)
-
-    if request.user.id != user.id and not request.user.is_superuser:
-        return HttpResponse("You are not allowed here!", status=403)
+def myLessons(request, directory_id=None):
+    user = request.user
 
     # Get or create root directory for the user
     root_directory = UserDirectory.get_or_create_root_directory(user)
@@ -166,7 +160,7 @@ def myLessons(request, pk, directory_id=None):
         "root_directory": root_directory,
         "directory_form": directory_form,
     }
-    return render(request, "base/my_lessons.html", context)
+    return render(request, "base/authenticated/my_lessons.html", context)
 
 
 @login_required(login_url="login")
@@ -329,7 +323,7 @@ def myLessonDetails(request, my_lesson_id):
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/my_lesson_details.html", context)
+    return render(request, "base/authenticated/my_lesson_details.html", context)
 
 
 @login_required(login_url="login")
@@ -364,8 +358,8 @@ def deleteMyLesson(request, my_lesson_id):
                 "Lesson and all your references were deleted from the repository.",
             )
             if redirect_directory:
-                return redirect("my-lessons-directory", pk=user.id, directory_id=redirect_directory.id)
-            return redirect("my-lessons", pk=user.id)
+                return redirect("my-lessons-directory", directory_id=redirect_directory.id)
+            return redirect("my-lessons")
         elif action == "delete_mylesson":
             myLesson.delete()
             messages.success(
@@ -373,8 +367,8 @@ def deleteMyLesson(request, my_lesson_id):
                 "Your lesson reference was deleted. The lesson remains in the repository.",
             )
             if redirect_directory:
-                return redirect("my-lessons-directory", pk=user.id, directory_id=redirect_directory.id)
-            return redirect("my-lessons", pk=user.id)
+                return redirect("my-lessons-directory", directory_id=redirect_directory.id)
+            return redirect("my-lessons")
 
     # Get breadcrumb path from lesson's directory
     current_directory = myLesson.directory
@@ -389,7 +383,7 @@ def deleteMyLesson(request, my_lesson_id):
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/delete_my_lesson.html", context)
+    return render(request, "base/authenticated/delete_my_lesson.html", context)
 
 
 @login_required(login_url="login")
@@ -418,7 +412,7 @@ def myWordDetails(request, my_word_id):
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/my_word_details.html", context)
+    return render(request, "base/authenticated/my_word_details.html", context)
 
 @login_required(login_url="login")
 def lessonsRepository(request):
@@ -439,7 +433,7 @@ def lessonsRepository(request):
     context = {
         "public_lessons": public_lessons,
     }
-    return render(request, "base/lessons_repository.html", context)
+    return render(request, "base/authenticated/lessons_repository.html", context)
 
 @login_required(login_url="login")
 def lessonDetails(request, lesson_id):
@@ -479,7 +473,7 @@ def lessonDetails(request, lesson_id):
         "average_rating": average_rating,
         "rating_count": rating_count,
     }
-    return render(request, "base/lesson_details.html", context)
+    return render(request, "base/authenticated/lesson_details.html", context)
 
 
 @login_required(login_url="login")
@@ -523,7 +517,7 @@ def rateLesson(request, lesson_id):
         "rate_lesson_form": rateLessonForm,
         "lesson": lesson,
     }
-    return render(request, "base/rate_lesson.html", context)
+    return render(request, "base/authenticated/rate_lesson.html", context)
 
 @login_required(login_url="login")
 def wordDetails(request, lesson_id, prompt):
@@ -541,7 +535,7 @@ def wordDetails(request, lesson_id, prompt):
         "lesson": lesson,
         "word": word,
     }
-    return render(request, "base/word_details.html", context)
+    return render(request, "base/authenticated/word_details.html", context)
 
 
 @login_required(login_url="login")
@@ -572,7 +566,7 @@ def importLesson(request, lesson_id):
     ) + f"{timezone.now()} Lesson imported by {user.username}"
     lesson.save()
 
-    return redirect("my-lessons", pk=user.id)
+    return redirect("my-lessons")
 
 
 @login_required(login_url="login")
@@ -636,7 +630,7 @@ def createLesson(request):
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/create_lesson.html", context)
+    return render(request, "base/authenticated/create_lesson.html", context)
 
 
 @login_required(login_url="login")
@@ -903,7 +897,7 @@ def editLesson(request, my_lesson_id):
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/edit_lesson.html", context)
+    return render(request, "base/authenticated/edit_lesson.html", context)
 
 
 @login_required(login_url="login")
@@ -930,7 +924,7 @@ def resetProgress(request, my_lesson_id):
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/reset_progress.html", context)
+    return render(request, "base/authenticated/reset_progress.html", context)
 
 
 @login_required(login_url="login")
@@ -1048,7 +1042,7 @@ def editWord(request, my_word_id):
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/edit_word.html", context)
+    return render(request, "base/authenticated/edit_word.html", context)
 
 
 @login_required(login_url="login")
@@ -1105,7 +1099,7 @@ def deleteWord(request, my_word_id):
         "breadcrumb_path": breadcrumb_path,
     }
 
-    return render(request, "base/delete_word.html", context)
+    return render(request, "base/authenticated/delete_word.html", context)
 
 
 # ------------Practice Views------------#
@@ -1160,7 +1154,7 @@ def practice(request, user_lesson_id, mode="normal"):
 
     return render(
         request,
-        "base/practice.html",
+        "base/authenticated/practice.html",
         {
             "user_word": user_word,
             "user_lesson_id": user_lesson_id,
@@ -1213,7 +1207,7 @@ def practice_feedback(request, user_lesson_id, mode="normal"):
         "lev_distance": answer_data.get("lev_distance", ""),
         "mode": mode,
     }
-    return render(request, "base/practice_feedback.html", context)
+    return render(request, "base/authenticated/practice_feedback.html", context)
 
 
 @login_required(login_url="login")
@@ -1336,7 +1330,7 @@ def import_lesson_json(request):
         messages.success(request, "Lesson imported successfully!")
         return redirect("my-lesson-details", my_lesson_id=user_lesson.id)
 
-    return render(request, "base/import_lesson_json.html")
+    return render(request, "base/authenticated/import_lesson_json.html")
 
 
 @login_required(login_url="login")
@@ -1378,7 +1372,7 @@ def export_lesson_json(request, lesson_id):
 @login_required(login_url="login")
 def generate_lesson_audio_start(request, my_lesson_id):
     myLesson = get_object_or_404(UserLesson, id=my_lesson_id, user=request.user)
-    return render(request, "base/generate_lesson_audio.html", {"my_lesson": myLesson})
+    return render(request, "base/authenticated/generate_lesson_audio.html", {"my_lesson": myLesson})
 
 
 @login_required(login_url="login")
@@ -1449,7 +1443,7 @@ def profile_view(request):
         "memory_usage_mb": memory_mb,
     }
 
-    return render(request, "base/profile.html", context)
+    return render(request, "base/authenticated/profile.html", context)
 
 
 @login_required(login_url="login")
@@ -1468,7 +1462,7 @@ def settings_view(request):
         profile_form = UserProfileForm(instance=user_profile)
     return render(
         request,
-        "base/settings.html",
+        "base/authenticated/settings.html",
         {"user_form": user_form, "profile_form": profile_form},
     )
 
@@ -1535,7 +1529,7 @@ def createDirectory(request, directory_id):
             directory.parent_directory = parent_directory
             directory.save()
             messages.success(request, f"Folder '{directory.name}' created successfully!")
-            return redirect("my-lessons-directory", pk=request.user.id, directory_id=parent_directory.id)
+            return redirect("my-lessons-directory", directory_id=parent_directory.id)
         else:
             for error in form.errors.values():
                 messages.error(request, error[0])
@@ -1550,7 +1544,7 @@ def createDirectory(request, directory_id):
         "parent_directory": parent_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/create_directory.html", context)
+    return render(request, "base/authenticated/create_directory.html", context)
 
 
 @login_required(login_url="login")
@@ -1560,7 +1554,7 @@ def renameDirectory(request, directory_id):
     
     if directory.is_root:
         messages.error(request, "Cannot rename the Home folder.")
-        return redirect("my-lessons", pk=request.user.id)
+        return redirect("my-lessons")
     
     parent_id = directory.parent_directory.id if directory.parent_directory else None
     
@@ -1575,8 +1569,8 @@ def renameDirectory(request, directory_id):
             form.save()
             messages.success(request, f"Folder renamed to '{directory.name}' successfully!")
             if parent_id:
-                return redirect("my-lessons-directory", pk=request.user.id, directory_id=parent_id)
-            return redirect("my-lessons", pk=request.user.id)
+                return redirect("my-lessons-directory", directory_id=parent_id)
+            return redirect("my-lessons")
         else:
             for error in form.errors.values():
                 messages.error(request, error[0])
@@ -1587,7 +1581,7 @@ def renameDirectory(request, directory_id):
         "form": form,
         "directory": directory,
     }
-    return render(request, "base/rename_directory.html", context)
+    return render(request, "base/authenticated/rename_directory.html", context)
 
 
 @login_required(login_url="login")
@@ -1597,7 +1591,7 @@ def moveDirectory(request, directory_id):
     
     if directory.is_root:
         messages.error(request, "Cannot move the Home folder.")
-        return redirect("my-lessons", pk=request.user.id)
+        return redirect("my-lessons")
     
     original_parent_id = directory.parent_directory.id if directory.parent_directory else None
     
@@ -1612,7 +1606,7 @@ def moveDirectory(request, directory_id):
                 directory.parent_directory = new_parent
                 directory.save()
                 messages.success(request, f"Folder '{directory.name}' moved successfully!")
-            return redirect("my-lessons-directory", pk=request.user.id, directory_id=new_parent.id)
+            return redirect("my-lessons-directory", directory_id=new_parent.id)
     else:
         form = MoveDirectoryForm(user=request.user, current_directory=directory)
     
@@ -1620,7 +1614,7 @@ def moveDirectory(request, directory_id):
         "form": form,
         "directory": directory,
     }
-    return render(request, "base/move_directory.html", context)
+    return render(request, "base/authenticated/move_directory.html", context)
 
 
 @login_required(login_url="login")
@@ -1630,7 +1624,7 @@ def deleteDirectory(request, directory_id):
     
     if directory.is_root:
         messages.error(request, "Cannot delete the Home folder.")
-        return redirect("my-lessons", pk=request.user.id)
+        return redirect("my-lessons")
     
     parent_id = directory.parent_directory.id if directory.parent_directory else None
     
@@ -1668,8 +1662,8 @@ def deleteDirectory(request, directory_id):
             messages.info(request, "Deletion cancelled.")
         
         if parent_id:
-            return redirect("my-lessons-directory", pk=request.user.id, directory_id=parent_id)
-        return redirect("my-lessons", pk=request.user.id)
+            return redirect("my-lessons-directory", directory_id=parent_id)
+        return redirect("my-lessons")
     
     context = {
         "directory": directory,
@@ -1677,7 +1671,7 @@ def deleteDirectory(request, directory_id):
         "lesson_count": lesson_count,
         "has_contents": subdirectory_count > 0 or lesson_count > 0,
     }
-    return render(request, "base/delete_directory.html", context)
+    return render(request, "base/authenticated/delete_directory.html", context)
 
 
 @login_required(login_url="login")
@@ -1694,7 +1688,7 @@ def moveLesson(request, my_lesson_id):
             user_lesson.directory = new_directory
             user_lesson.save()
             messages.success(request, f"Lesson '{user_lesson.lesson.title}' moved successfully!")
-            return redirect("my-lessons-directory", pk=request.user.id, directory_id=new_directory.id)
+            return redirect("my-lessons-directory", directory_id=new_directory.id)
     else:
         form = MoveLessonForm(user=request.user)
         if user_lesson.directory:
@@ -1707,7 +1701,7 @@ def moveLesson(request, my_lesson_id):
         "user_lesson": user_lesson,
         "cancel_url": cancel_url,
     }
-    return render(request, "base/move_lesson.html", context)
+    return render(request, "base/authenticated/move_lesson.html", context)
 
 
 @login_required(login_url="login")
@@ -1720,14 +1714,14 @@ def dragDropMove(request):
     
     if not all([item_type, item_id, target_directory_id]):
         messages.error(request, "Invalid move operation.")
-        return redirect("my-lessons", pk=request.user.id)
+        return redirect("my-lessons")
     
     try:
         item_id = int(item_id)
         target_directory_id = int(target_directory_id)
     except ValueError:
         messages.error(request, "Invalid move operation.")
-        return redirect("my-lessons", pk=request.user.id)
+        return redirect("my-lessons")
     
     # Get target directory
     target_directory = get_object_or_404(UserDirectory, id=target_directory_id, user=request.user)
@@ -1771,4 +1765,4 @@ def dragDropMove(request):
     else:
         messages.error(request, "Invalid item type.")
     
-    return redirect("my-lessons-directory", pk=request.user.id, directory_id=target_directory_id)
+    return redirect("my-lessons-directory", directory_id=target_directory_id)

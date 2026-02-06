@@ -1,0 +1,14 @@
+{% extends 'base/layouts/user_layout.html' %}
+
+{% block tab_content %}
+
+{% include 'base/authenticated/includes/breadcrumb.html' %}
+
+<form method="POST" action="">
+    {% csrf_token %}
+    <p>Are you sure you want to delete {{my_word}}?</p>
+    <a href="{{request.META.HTTP_REFERER}}">Cancel</a>
+    <input type="submit" value="Confirm"/>
+</form>
+
+{% endblock tab_content %}

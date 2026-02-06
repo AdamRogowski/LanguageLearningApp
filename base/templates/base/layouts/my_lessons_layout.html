@@ -1,0 +1,9 @@
+{% extends 'base/layouts/authenticated.html' %}
+
+{% block authenticated_content %}
+    {% include 'base/authenticated/tabs.html' %}
+
+    <div class="tab-content">
+        {% block tab_content %}{% endblock %}
+    </div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends 'base/layouts/user_layout.html' %}
+
+{% block tab_content %}
+
+<h1><a href="{% url 'lessons-repository' %}">Lessons Repository</a></h1>
+<h2><a href="{% url 'lesson-details' lesson.id %}">{{ lesson.title }}</a></h2>
+<h5>{{ lesson.description }}</h5>
+
+
+ 
+
+<div class="word-container">
+    <div>
+        <h5>Prompt:  
+        {% if word.prompt_audio %}
+            <audio id="prompt_audio" src="{{ word.prompt_audio.url }}"></audio>
+            <button type="button" onclick="document.getElementById('prompt_audio').play()">{{ word.prompt }} 🔊</button>
+        {% else %}
+            {{ word.prompt }} (no audio available)
+        {% endif %}
+        </h5>
+        <h5>Translation: {{ word.translation }} </h5>
+        <h5>Usage: 
+        {% if word.usage_audio %}
+            <audio id="usage_audio" src="{{ word.usage_audio.url }}"></audio>
+            <button type="button" onclick="document.getElementById('usage_audio').play()">{{ word.usage }} 🔊</button>
+        {% else %}
+            {{ word.usage }} (no audio available)
+        {% endif %}
+        </h5>
+        <h5>Hint: {{ word.hint }} </h5>
+        <h5>Created: {{ word.created }} </h5>
+        <h5>Last updated: {{ word.updated }} </h5>
+    </div>    
+
+</div>  
+
+
+{% endblock tab_content %}

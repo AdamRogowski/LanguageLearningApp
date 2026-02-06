@@ -1,0 +1,53 @@
+{% extends 'base/layouts/user_layout.html' %}
+
+{% block tab_content %}
+
+<h1>Move Lesson</h1>
+
+<p>Move lesson <strong>"{{ user_lesson.lesson.title }}"</strong> to a different folder:</p>
+
+<hr>
+
+<form method="POST">
+    {% csrf_token %}
+    
+    <div class="form-group">
+        <label for="id_directory">Move to folder:</label>
+        {{ form.directory }}
+    </div>
+    
+    <div class="form-actions">
+        <button type="submit">Move Lesson</button>
+        <a href="{{ cancel_url }}">
+            <button type="button">Cancel</button>
+        </a>
+    </div>
+</form>
+
+<style>
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+    .form-group select {
+        padding: 8px 12px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        min-width: 300px;
+    }
+    .form-actions {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+    }
+    .form-actions button {
+        padding: 8px 16px;
+        cursor: pointer;
+    }
+</style>
+
+{% endblock tab_content %}

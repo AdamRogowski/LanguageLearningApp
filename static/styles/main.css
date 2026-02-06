@@ -126,3 +126,174 @@ footer {
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/* Unauthenticated pages styling */
+.unauthenticated-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+}
+
+.login-register-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    max-width: 450px;
+    width: 100%;
+    text-align: center;
+}
+
+.logo-large {
+    margin-bottom: 30px;
+}
+
+.logo-large img {
+    max-width: 200px;
+    height: auto;
+    margin-bottom: 10px;
+}
+
+.logo-large h1 {
+    font-size: 24px;
+    color: #333;
+    margin: 0;
+}
+
+.login-form, .register-form {
+    margin-top: 20px;
+}
+
+.login-form h2, .register-form h2 {
+    margin-bottom: 20px;
+    color: #667eea;
+}
+
+.login-form input[type="text"],
+.login-form input[type="password"],
+.register-form input[type="text"],
+.register-form input[type="password"],
+.register-form input[type="email"] {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.login-form input[type="submit"],
+.register-form input[type="submit"] {
+    width: 100%;
+    padding: 12px;
+    margin: 20px 0 10px 0;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.login-form input[type="submit"]:hover,
+.register-form input[type="submit"]:hover {
+    background: #5568d3;
+}
+
+.show-password-label {
+    display: block;
+    text-align: left;
+    margin: 10px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.links {
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.links a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.links a:hover {
+    text-decoration: underline;
+}
+
+.links p {
+    margin: 10px 0;
+    color: #666;
+}
+
+/* Tab navigation styling */
+.tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #e0e0e0;
+    margin-bottom: 0;
+    background-color: #f5f5f5;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 80px; /* Below the header */
+    z-index: 900;
+    width: 100%;
+}
+
+.tabs a {
+    padding: 15px 30px;
+    text-decoration: none;
+    color: #666;
+    font-weight: 500;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+    top: 2px;
+    background: linear-gradient(to bottom, transparent 0%, transparent 100%);
+}
+
+.tabs a:hover {
+    background: linear-gradient(to bottom, #f0f0f0 0%, #e8e8e8 100%);
+    color: #333;
+    transform: translateY(-1px);
+}
+
+.tabs a.active {
+    color: #667eea;
+    border-bottom: 3px solid #667eea;
+    background: white;
+    font-weight: 600;
+    box-shadow: 0 -2px 8px rgba(102, 126, 234, 0.1);
+    transform: translateY(-2px);
+}
+
+.tab-content {
+    padding: 20px;
+    margin-top: 0;
+}
+
+/* Authenticated layout adjustments */
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: white;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+main {
+    margin-top: 80px; /* Space for fixed header */
+    margin-bottom: 60px;
+    overflow-y: auto;
+    max-height: calc(100vh - 180px);
+    padding: 0;
+}

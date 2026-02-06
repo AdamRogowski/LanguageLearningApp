@@ -1,0 +1,343 @@
+{% extends 'base/layouts/my_lessons_layout.html' %}
+
+{% block tab_content %}
+{% include 'base/authenticated/includes/breadcrumb.html' %}
+
+<!-- Add New Dropdown -->
+<div class="add-new-dropdown">
+    <div class="dropdown">
+        <button class="dropdown-btn add-btn" data-menu="add-menu">&#43;</button>
+        <div class="dropdown-menu" id="add-menu">
+            <a href="{% url 'create-lesson' %}">Create Lesson</a>
+            <a href="{% url 'create-directory' current_directory.id %}">Create Folder</a>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for drag-and-drop operations -->
+<form id="move-item-form" method="POST" action="{% url 'drag-drop-move' %}" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="item_type" id="move-item-type">
+    <input type="hidden" name="item_id" id="move-item-id">
+    <input type="hidden" name="target_directory_id" id="move-target-directory">
+</form>
+
+<div class="my-lessons-container">
+
+    <!-- Subdirectories -->
+    {% if subdirectories %}
+    <div class="directories-list">
+        {% for subdir in subdirectories %}
+            <div class="directory-item droppable" 
+                 draggable="true" 
+                 data-type="directory" 
+                 data-id="{{ subdir.id }}"
+                 data-target-id="{{ subdir.id }}">
+                <span class="drag-handle">⋮⋮</span>
+                <span class="directory-icon">📁</span>
+                <a href="{% url 'my-lessons-directory' subdir.id %}" class="directory-link">{{ subdir.name }}</a>
+                <span class="directory-actions">
+                    <div class="dropdown">
+                        <button class="dropdown-btn" data-menu="dir-{{ subdir.id }}">&#9881;</button>
+                        <div class="dropdown-menu" id="dir-{{ subdir.id }}">
+                            <a href="{% url 'rename-directory' subdir.id %}">Rename</a>
+                            <a href="{% url 'move-directory' subdir.id %}">Move</a>
+                            <a href="{% url 'delete-directory' subdir.id %}">Delete</a>
+                        </div>
+                    </div>
+                </span>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Lessons in current directory -->
+    <div class="lessons-list">
+        {% if my_lessons %}
+        {% for my_lesson in my_lessons %}
+            <div class="lesson-item draggable" 
+                 draggable="true" 
+                 data-type="lesson" 
+                 data-id="{{ my_lesson.id }}">
+                <span class="drag-handle">⋮⋮</span>
+                <span class="lesson-icon">📖</span>
+                <a href="{% url 'my-lesson-details' my_lesson.id %}">{{ my_lesson.lesson.title }}</a>
+                <span class="lesson-actions">
+                    <div class="dropdown">
+                        <button class="dropdown-btn" data-menu="lesson-{{ my_lesson.id }}">&#9881;</button>
+                        <div class="dropdown-menu" id="lesson-{{ my_lesson.id }}">
+                            {% if user == my_lesson.lesson.author or my_lesson.lesson.access_type.name == "write" %}
+                            <a href="{% url 'edit-lesson' my_lesson.id %}">Edit</a>
+                            {% else %}
+                            <span class="disabled">Edit</span>
+                            {% endif %}
+                            <a href="{% url 'move-lesson' my_lesson.id %}">Move</a>
+                            <a href="{% url 'delete-my-lesson' my_lesson.id %}">Delete</a>
+                        </div>
+                    </div>
+                </span>
+            </div>    
+        {% endfor %}
+        {% else %}
+            {% if not subdirectories %}
+            <p>No lessons or folders in this directory.</p>
+            {% endif %}
+        {% endif %}
+    </div>
+
+</div>
+
+<style>
+    .breadcrumb-nav {
+        padding: 10px 0;
+        margin-bottom: 15px;
+    }
+    .breadcrumb-nav a {
+        color: #007bff;
+        text-decoration: none;
+    }
+    .breadcrumb-nav a:hover {
+        text-decoration: underline;
+    }
+    .create-directory-form {
+        margin: 15px 0;
+    }
+    .create-directory-form input[type="text"] {
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .create-directory-form button {
+        padding: 6px 12px;
+        cursor: pointer;
+    }
+    .directories-list, .lessons-list {
+        margin-bottom: 20px;
+    }
+    .directory-item, .lesson-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 5px;
+        gap: 10px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+    .directory-item:hover, .lesson-item:hover {
+        background-color: #f5f5f5;
+    }
+    .directory-icon, .lesson-icon {
+        font-size: 1.2em;
+    }
+    .directory-link, .lesson-item a {
+        flex-grow: 1;
+    }
+    .directory-actions, .lesson-actions {
+        display: flex;
+        gap: 8px;
+    }
+    .directory-actions a, .lesson-actions a {
+        text-decoration: none;
+        opacity: 0.6;
+    }
+    .directory-actions a:hover, .lesson-actions a:hover {
+        opacity: 1;
+    }
+    
+    /* Dropdown Styles */
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    .dropdown-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1.2em;
+        color: #999;
+        padding: 0;
+        line-height: 1;
+    }
+    .dropdown-btn:hover {
+        color: #666;
+    }
+    .dropdown-menu {
+        display: none;
+        position: absolute;
+        right: 0;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        z-index: 1000;
+        min-width: 120px;
+    }
+    .dropdown-menu a {
+        display: block;
+        padding: 8px 12px;
+        text-decoration: none;
+        color: #333;
+        white-space: nowrap;
+    }
+    .dropdown-menu a:hover {
+        background: #f5f5f5;
+    }
+    .dropdown-menu .disabled {
+        color: #ccc;
+        cursor: not-allowed;
+        padding: 8px 12px;
+        display: block;
+    }
+    
+    /* Add New Dropdown Styles */
+    .add-new-dropdown {
+        margin: 15px 0;
+        text-align: left;
+    }
+    .add-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1.5em;
+        color: #999;
+        padding: 10px;
+        line-height: 1;
+    }
+    .add-btn:hover {
+        color: #666;
+    }
+    .add-new-dropdown .dropdown-menu {
+        top: 0;
+        left: 100%;
+        right: auto;
+        transform: none;
+    }
+    
+    /* Drag and Drop Styles */
+    .drag-handle {
+        cursor: grab;
+        color: #999;
+        font-size: 1.1em;
+        user-select: none;
+        padding: 0 5px;
+    }
+    .drag-handle:hover {
+        color: #666;
+    }
+    .draggable[draggable="true"], .directory-item[draggable="true"] {
+        cursor: grab;
+    }
+    .draggable.dragging, .directory-item.dragging {
+        opacity: 0.5;
+        cursor: grabbing;
+    }
+    .droppable.drag-over {
+        background-color: #e3f2fd;
+        border: 2px dashed #2196f3;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Dropdown functionality
+    const dropdownBtns = document.querySelectorAll('.dropdown-btn');
+    dropdownBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const menuId = this.dataset.menu;
+            const menu = document.getElementById(menuId);
+            // Hide all other menus
+            document.querySelectorAll('.dropdown-menu').forEach(m => {
+                if (m !== menu) m.style.display = 'none';
+            });
+            // Toggle this menu
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        });
+    });
+    
+    // Close menus when clicking outside
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+    });
+    
+    const draggables = document.querySelectorAll('[draggable="true"]');
+    const droppables = document.querySelectorAll('.droppable');
+    
+    let draggedItem = null;
+    let draggedType = null;
+    let draggedId = null;
+    
+    // Draggable items (lessons and directories)
+    draggables.forEach(item => {
+        item.addEventListener('dragstart', function(e) {
+            draggedItem = this;
+            draggedType = this.dataset.type;
+            draggedId = this.dataset.id;
+            this.classList.add('dragging');
+            
+            // Set drag data
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', JSON.stringify({
+                type: draggedType,
+                id: draggedId
+            }));
+        });
+        
+        item.addEventListener('dragend', function(e) {
+            this.classList.remove('dragging');
+            draggedItem = null;
+            draggedType = null;
+            draggedId = null;
+            
+            // Remove drag-over from all droppables
+            droppables.forEach(d => d.classList.remove('drag-over'));
+        });
+    });
+    
+    // Droppable directories
+    droppables.forEach(dropzone => {
+        dropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            // Don't allow dropping on itself
+            const targetId = this.dataset.targetId;
+            if (draggedType === 'directory' && draggedId === targetId) {
+                return;
+            }
+            
+            this.classList.add('drag-over');
+        });
+        
+        dropzone.addEventListener('dragleave', function(e) {
+            // Only remove if leaving the actual element, not a child
+            if (!this.contains(e.relatedTarget)) {
+                this.classList.remove('drag-over');
+            }
+        });
+        
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            
+            const targetDirectoryId = this.dataset.targetId;
+            
+            // Don't allow dropping directory on itself
+            if (draggedType === 'directory' && draggedId === targetDirectoryId) {
+                return;
+            }
+            
+            // Submit the move operation
+            const form = document.getElementById('move-item-form');
+            document.getElementById('move-item-type').value = draggedType;
+            document.getElementById('move-item-id').value = draggedId;
+            document.getElementById('move-target-directory').value = targetDirectoryId;
+            
+            // Set the form action based on item type
+            form.action = '{% url "drag-drop-move" %}';
+            form.submit();
+        });
+    });
+});
+</script>
+
+{% endblock tab_content %}

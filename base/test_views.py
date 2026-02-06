@@ -102,7 +102,7 @@ def test_login_page_post_invalid_user(client):
 def test_register_page_get(client):
     response = client.get(reverse("register"))
     assert response.status_code == 200
-    assert "base/login_register.html" in [t.name for t in response.templates]
+    assert "base/unauthenticated/login_register.html" in [t.name for t in response.templates]
 
 
 @pytest.mark.django_db
@@ -120,8 +120,9 @@ def test_register_page_post(client):
 def test_home_authenticated(client, user):
     client.login(username="testuser", password="testpass")
     response = client.get(reverse("home"))
-    assert response.status_code == 200
-    assert "base/home.html" in [t.name for t in response.templates]
+    # Home now redirects to my-lessons
+    assert response.status_code == 302
+    assert response.url == "/my-lessons/"
 
 
 @pytest.mark.django_db
@@ -134,18 +135,19 @@ def test_home_unauthenticated(client):
 @pytest.mark.django_db
 def test_my_lessons_access(client, user, user_lesson):
     client.login(username="testuser", password="testpass")
-    response = client.get(reverse("my-lessons", kwargs={"pk": user.id}))
+    response = client.get(reverse("my-lessons"))
     assert response.status_code == 200
-    assert "base/my_lessons.html" in [t.name for t in response.templates]
+    assert "base/authenticated/my_lessons.html" in [t.name for t in response.templates]
 
 
 @pytest.mark.django_db
 def test_my_lessons_forbidden(client, user, superuser, user_lesson):
     User.objects.create_user(username="other", password="pass")
     client.login(username="other", password="pass")
-    response = client.get(reverse("my-lessons", kwargs={"pk": user.id}))
-    assert response.status_code == 403
-    assert b"You are not allowed here!" in response.content
+    # After refactoring, users can only access their own lessons (authenticated user always sees their own lessons)
+    # This test is no longer applicable as my-lessons no longer takes pk parameter
+    response = client.get(reverse("my-lessons"))
+    assert response.status_code == 200  # User sees their own lessons
 
 
 @pytest.mark.django_db
@@ -155,7 +157,7 @@ def test_my_lesson_details_access(client, user, user_lesson):
         reverse("my-lesson-details", kwargs={"my_lesson_id": user_lesson.id})
     )
     assert response.status_code == 200
-    assert "base/my_lesson_details.html" in [t.name for t in response.templates]
+    assert "base/authenticated/my_lesson_details.html" in [t.name for t in response.templates]
 
 
 @pytest.mark.django_db
@@ -175,7 +177,7 @@ def test_delete_my_lesson_get(client, user, user_lesson):
         reverse("delete-my-lesson", kwargs={"my_lesson_id": user_lesson.id})
     )
     assert response.status_code == 200
-    assert "base/delete_my_lesson.html" in [t.name for t in response.templates]
+    assert "base/authenticated/delete_my_lesson.html" in [t.name for t in response.templates]
 
 
 @pytest.mark.django_db
@@ -223,11 +225,11 @@ def test_import_lesson(client, user, lesson, access_type_private):
 
 
 @pytest.mark.django_db
-def test_create_lesson_get(client, user):
+def test_create_lesson_get(client, user, access_type_private):
     client.login(username="testuser", password="testpass")
     response = client.get(reverse("create-lesson"))
     assert response.status_code == 200
-    assert "base/create_lesson.html" in [t.name for t in response.templates]
+    assert "base/authenticated/create_lesson.html" in [t.name for t in response.templates]
 
 
 @pytest.mark.django_db
@@ -251,7 +253,7 @@ def test_edit_lesson_get(client, user, user_lesson):
         reverse("edit-lesson", kwargs={"my_lesson_id": user_lesson.id})
     )
     assert response.status_code == 200
-    assert "base/edit_lesson.html" in [t.name for t in response.templates]
+    assert "base/authenticated/edit_lesson.html" in [t.name for t in response.templates]
 
 
 @pytest.mark.django_db
@@ -275,7 +277,7 @@ def test_edit_word_get(client, user, user_word):
     client.login(username="testuser", password="testpass")
     response = client.get(reverse("edit-word", kwargs={"my_word_id": user_word.id}))
     assert response.status_code == 200
-    assert "base/edit_word.html" in [t.name for t in response.templates]
+    assert "base/authenticated/edit_word.html" in [t.name for t in response.templates]
 
 
 @pytest.mark.django_db
@@ -298,7 +300,7 @@ def test_delete_word_get(client, user, user_word):
     client.login(username="testuser", password="testpass")
     response = client.get(reverse("delete-word", kwargs={"my_word_id": user_word.id}))
     assert response.status_code == 200
-    assert "base/delete_word.html" in [t.name for t in response.templates]
+    assert "base/authenticated/delete_word.html" in [t.name for t in response.templates]
 
 
 @pytest.mark.django_db
@@ -313,7 +315,7 @@ def test_profile_view_authenticated(client, user):
     client.login(username="testuser", password="testpass")
     response = client.get(reverse("profile"))
     assert response.status_code == 200
-    assert "base/profile.html" in [t.name for t in response.templates]
+    assert "base/authenticated/profile.html" in [t.name for t in response.templates]
     assert b"memory_usage_mb" in response.content or b"MB" in response.content
 
 
@@ -322,7 +324,7 @@ def test_settings_view_get(client, user):
     client.login(username="testuser", password="testpass")
     response = client.get(reverse("settings"))
     assert response.status_code == 200
-    assert "base/settings.html" in [t.name for t in response.templates]
+    assert "base/authenticated/settings.html" in [t.name for t in response.templates]
 
 
 @pytest.mark.django_db
@@ -389,7 +391,7 @@ def test_generate_lesson_audio_start(client, user, user_lesson):
         reverse("generate-lesson-audio-start", kwargs={"my_lesson_id": user_lesson.id})
     )
     assert response.status_code == 200
-    assert "base/generate_lesson_audio.html" in [t.name for t in response.templates]
+    assert "base/authenticated/generate_lesson_audio.html" in [t.name for t in response.templates]
 
 
 @pytest.mark.django_db
@@ -418,8 +420,9 @@ def test_cancel_practice(client, user, user_lesson):
 def test_my_lessons_access_denied(client, user, superuser, user_lesson):
     other = User.objects.create_user(username="other", password="pass")
     client.login(username="other", password="pass")
-    response = client.get(reverse("my-lessons", kwargs={"pk": user.id}))
-    assert b"You are not allowed here!" in response.content
+    # After refactoring, users can only access their own lessons
+    response = client.get(reverse("my-lessons"))
+    assert response.status_code == 200  # User sees their own lessons (which are empty)
 
 
 @pytest.mark.django_db

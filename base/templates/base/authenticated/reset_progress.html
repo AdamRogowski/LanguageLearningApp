@@ -1,0 +1,17 @@
+{% extends 'base/layouts/user_layout.html' %}
+{% block tab_content %}
+
+{% include 'base/authenticated/includes/breadcrumb.html' %}
+
+<h1><a href="{% url 'my-lessons' %}">{{my_lesson.user.username}}'s lessons</a></h1>
+<h2><a href="{% url 'my-lesson-details' my_lesson.id %}">{{ my_lesson.lesson.title }}</a></h2>
+<hr>
+
+<h2>Reset Progress</h2>
+<p>Are you sure you want to reset the progress of all words in the lesson <strong>{{ my_lesson.lesson.title }}</strong>?</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, reset all progress</button>
+    <a href="{% url 'my-lesson-details' my_lesson.id %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock tab_content %}

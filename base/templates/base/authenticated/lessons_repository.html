@@ -1,0 +1,20 @@
+{% extends 'base/layouts/my_lessons_layout.html' %}
+
+{% block tab_content %}
+<h1><a href="{% url 'lessons-repository' %}">Lessons Repository</a></h1>
+
+<form method="GET" action="{% url 'lessons-repository' %}">
+    <input type="text" name="q" placeholder="Search...">
+    <button type="submit">Search</button>
+</form>
+
+<div class="lessons-repository-container">
+    <div>
+        {% for lesson in public_lessons %}
+            <div>
+                <a href="{% url 'lesson-details' lesson.id %}">{{ lesson.title }}</a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

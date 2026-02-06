@@ -1,0 +1,15 @@
+{% extends 'base/layouts/user_layout.html' %}
+
+{% block tab_content %}
+
+<h1><a href="{% url 'lessons-repository' %}">Lessons Repository</a></h1>
+<h2><a href="{% url 'lesson-details' lesson.id %}">{{ lesson.title }}</a></h2>
+
+<form method="POST" action="">
+    {% csrf_token %}
+    {{ rate_lesson_form.as_p }}
+    <button type="button" onclick="window.location.href='{{ request.META.HTTP_REFERER }}'" style="display:inline;">Cancel</button>
+    <input type="submit" value="Submit" />
+</form>
+
+{% endblock tab_content %}

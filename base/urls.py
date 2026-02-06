@@ -10,8 +10,8 @@ urlpatterns = [
     path("logout/", views.logoutUser, name="logout"),
     path("register/", views.registerPage, name="register"),
     path("", views.home, name="home"),
-    path("my-lessons/<str:pk>/", views.myLessons, name="my-lessons"),
-    path("my-lessons/<str:pk>/directory/<int:directory_id>/", views.myLessons, name="my-lessons-directory"),
+    path("my-lessons/", views.myLessons, name="my-lessons"),
+    path("my-lessons/directory/<int:directory_id>/", views.myLessons, name="my-lessons-directory"),
     # Directory management
     path("create-directory/<int:directory_id>/", views.createDirectory, name="create-directory"),
     path("rename-directory/<int:directory_id>/", views.renameDirectory, name="rename-directory"),
@@ -93,28 +93,28 @@ urlpatterns = [
     path(
         "password_reset/",
         auth_views.PasswordResetView.as_view(
-            template_name="base/password_reset_form.html"
+            template_name="base/unauthenticated/password_reset_form.html"
         ),
         name="password_reset",
     ),
     path(
         "password_reset/done/",
         auth_views.PasswordResetDoneView.as_view(
-            template_name="base/password_reset_done.html"
+            template_name="base/unauthenticated/password_reset_done.html"
         ),
         name="password_reset_done",
     ),
     path(
         "reset/<uidb64>/<token>/",
         auth_views.PasswordResetConfirmView.as_view(
-            template_name="base/password_reset_confirm.html"
+            template_name="base/unauthenticated/password_reset_confirm.html"
         ),
         name="password_reset_confirm",
     ),
     path(
         "reset/done/",
         auth_views.PasswordResetCompleteView.as_view(
-            template_name="base/password_reset_complete.html"
+            template_name="base/unauthenticated/password_reset_complete.html"
         ),
         name="password_reset_complete",
     ),
@@ -123,7 +123,7 @@ urlpatterns = [
     path(
         "password_change/",
         auth_views.PasswordChangeView.as_view(
-            template_name="base/password_change_form.html", success_url="/settings/"
+            template_name="base/authenticated/password_change_form.html", success_url="/settings/"
         ),
         name="password_change",
     ),

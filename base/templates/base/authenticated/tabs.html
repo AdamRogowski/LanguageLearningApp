@@ -1,0 +1,4 @@
+<nav class="tabs">
+    <a href="{% url 'my-lessons' %}" class="{% if request.resolver_match.url_name == 'my-lessons' or request.resolver_match.url_name == 'my-lessons-directory' %}active{% endif %}">My Lessons</a>
+    <a href="{% url 'lessons-repository' %}" class="{% if request.resolver_match.url_name == 'lessons-repository' %}active{% endif %}">Lessons Repository</a>
+</nav>
