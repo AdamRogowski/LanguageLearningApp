@@ -17,6 +17,7 @@ class UserProfile(models.Model):
     target_progress = models.PositiveIntegerField(default=3, validators=[MinValueValidator(1)])
     practice_window = models.PositiveIntegerField(default=10, validators=[MinValueValidator(1)])
     allowed_error_margin = models.PositiveIntegerField(default=0, validators=[MinValueValidator(0)])
+    auto_generate_hints = models.BooleanField(default=True)
 
     def __str__(self):
         return f"Profile of {self.user.username}"
@@ -131,6 +132,22 @@ class Word(models.Model):
     hint = models.CharField(max_length=255, blank=True)
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
+
+    def has_prompt_audio(self):
+        """Check if prompt audio file exists on disk."""
+        return (
+            self.prompt_audio
+            and self.prompt_audio.name
+            and os.path.isfile(self.prompt_audio.path)
+        )
+
+    def has_usage_audio(self):
+        """Check if usage audio file exists on disk."""
+        return (
+            self.usage_audio
+            and self.usage_audio.name
+            and os.path.isfile(self.usage_audio.path)
+        )
 
     def delete(self, *args, **kwargs):
         # Delete prompt audio file if it exists

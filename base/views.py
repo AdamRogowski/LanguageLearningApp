@@ -261,6 +261,11 @@ def myLessonDetails(request, my_lesson_id):
                     hint=hint,
                     lesson=myLesson.lesson,
                 )
+                
+                # Auto-generate hint if preference is enabled and hint is blank
+                if request.user.userprofile.auto_generate_hints and not new_word.hint and new_word.prompt:
+                    new_word.hint = new_word.prompt[0].upper()
+                
                 new_word.save()
 
                 # Generate prompt audio
@@ -746,16 +751,23 @@ def importAndCopyLesson(request, lesson_id):
 
     # Copy words to the new lesson using bulk operations
     words = list(lesson.words.all())
-    new_words = Word.objects.bulk_create([
-        Word(
+    
+    # Auto-generate hints for words if preference is enabled
+    auto_generate = user.userprofile.auto_generate_hints
+    new_words_data = []
+    for word in words:
+        hint = word.hint
+        if auto_generate and not hint and word.prompt:
+            hint = word.prompt[0].upper()
+        new_words_data.append(Word(
             lesson=new_lesson,
             prompt=word.prompt,
             translation=word.translation,
             usage=word.usage,
-            hint=word.hint,
-        )
-        for word in words
-    ])
+            hint=hint,
+        ))
+    
+    new_words = Word.objects.bulk_create(new_words_data)
     UserWord.objects.bulk_create([
         UserWord(
             user_lesson=new_user_lesson,

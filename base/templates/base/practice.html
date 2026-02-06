@@ -36,9 +36,11 @@
     <button type="button" onclick="toggleRollout('usage')">Show/Hide Usage</button>
     <div id="usage" style="display:none; margin-bottom:1em;">
         <em>{{ user_word.word.usage|default:"No usage example available." }}</em>
-        {% if user_word.word.usage_audio %}
+        {% if user_word.word.has_usage_audio %}
             <audio id="usage_audio" src="{{ user_word.word.usage_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
             <button type="button" onclick="document.getElementById('usage_audio').play()">🔊 Listen to usage</button>
+        {% elif user_word.word.usage %}
+            <button type="button" disabled title="Audio not generated for this word" class="audio-disabled">🔇 No audio</button>
         {% endif %}
     </div>
 </div>
