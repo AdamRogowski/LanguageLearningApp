@@ -1,7 +1,6 @@
 {% extends 'base/layouts/my_lessons_layout.html' %}
 
 {% block tab_content %}
-{% include 'base/authenticated/includes/breadcrumb.html' %}
 
 <!-- Add New Dropdown -->
 <div class="add-new-dropdown">
@@ -20,7 +19,8 @@
     <input type="hidden" name="item_type" id="move-item-type">
     <input type="hidden" name="item_id" id="move-item-id">
     <input type="hidden" name="target_directory_id" id="move-target-directory">
-</form>
+        <input type="hidden" name="source_directory_id" id="move-source-directory">
+    </form>
 
 <div class="my-lessons-container">
 
@@ -87,18 +87,9 @@
 
 </div>
 
+
+<!-- TODO: Manage styles, prevent overlapping, one source of truth -->
 <style>
-    .breadcrumb-nav {
-        padding: 10px 0;
-        margin-bottom: 15px;
-    }
-    .breadcrumb-nav a {
-        color: #007bff;
-        text-decoration: none;
-    }
-    .breadcrumb-nav a:hover {
-        text-decoration: underline;
-    }
     .create-directory-form {
         margin: 15px 0;
     }
@@ -113,6 +104,7 @@
     }
     .directories-list, .lessons-list {
         margin-bottom: 20px;
+        margin-right: 40px;
     }
     .directory-item, .lesson-item {
         display: flex;
@@ -334,6 +326,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Set the form action based on item type
             form.action = '{% url "drag-drop-move" %}';
+            // Set the source directory (current directory)
+            document.getElementById('move-source-directory').value = '{{ current_directory.id|default:"null" }}';
             form.submit();
         });
     });

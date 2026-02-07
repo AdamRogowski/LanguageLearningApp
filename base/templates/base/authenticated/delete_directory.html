@@ -1,26 +1,8 @@
-{% extends 'base/layouts/user_layout.html' %}
+{% extends 'base/layouts/my_lessons_layout.html' %}
 
 {% block tab_content %}
 
 <h1>Delete Folder</h1>
-
-<nav class="breadcrumb-nav">
-    <span>📁 </span>
-    {% for dir in directory.get_path %}
-        {% if forloop.last %}
-            <strong>{{ dir.name }}</strong> (deleting)
-        {% else %}
-            {% if dir.is_root %}
-                <a href="{% url 'my-lessons' %}">{{ dir.name }}</a>
-            {% else %}
-                <a href="{% url 'my-lessons-directory' dir.id %}">{{ dir.name }}</a>
-            {% endif %}
-            <span> / </span>
-        {% endif %}
-    {% endfor %}
-</nav>
-
-<hr>
 
 <div class="delete-warning">
     <h2>⚠️ Warning</h2>
@@ -86,17 +68,6 @@
 </form>
 
 <style>
-    .breadcrumb-nav {
-        padding: 10px 0;
-        margin-bottom: 15px;
-    }
-    .breadcrumb-nav a {
-        color: #007bff;
-        text-decoration: none;
-    }
-    .breadcrumb-nav a:hover {
-        text-decoration: underline;
-    }
     .delete-warning {
         background-color: #fff3cd;
         border: 1px solid #ffc107;

@@ -1,8 +1,6 @@
-{% extends 'base/layouts/my_lessons_layout.html' %}
+{% extends 'base/layouts/lessons_repository_layout.html' %}
 
 {% block tab_content %}
-
-<h1><a href="{% url 'lessons-repository' %}">Lessons Repository</a></h1>
 <h2><a href="{% url 'lesson-details' lesson.id %}">{{ lesson.title }}</a></h2>
 {% if lesson.original_lesson %}
     {% if lesson.original_lesson.access_type.name == "private" %}

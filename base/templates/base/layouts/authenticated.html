@@ -3,6 +3,15 @@
 {% block content %}
     <header>
         {% include 'base/authenticated/header.html' %}
+
+        <div class="header-tabs">
+        {% block header_tabs %}{% endblock %}
+        </div>
+        
+        <div class="breadcrumb">
+        {% block breadcrumb_content %}{% endblock %}
+        </div>
+        
     </header>
     
     <main>

@@ -433,7 +433,7 @@ def lessonsRepository(request):
     context = {
         "public_lessons": public_lessons,
     }
-    return render(request, "base/authenticated/lessons_repository.html", context)
+    return render(request, "base/authenticated/lesson_repository/lessons_repository.html", context)
 
 @login_required(login_url="login")
 def lessonDetails(request, lesson_id):
@@ -473,7 +473,7 @@ def lessonDetails(request, lesson_id):
         "average_rating": average_rating,
         "rating_count": rating_count,
     }
-    return render(request, "base/authenticated/lesson_details.html", context)
+    return render(request, "base/authenticated/lesson_repository/lesson_details.html", context)
 
 
 @login_required(login_url="login")
@@ -517,7 +517,7 @@ def rateLesson(request, lesson_id):
         "rate_lesson_form": rateLessonForm,
         "lesson": lesson,
     }
-    return render(request, "base/authenticated/rate_lesson.html", context)
+    return render(request, "base/authenticated/lesson_repository/rate_lesson.html", context)
 
 @login_required(login_url="login")
 def wordDetails(request, lesson_id, prompt):
@@ -535,7 +535,7 @@ def wordDetails(request, lesson_id, prompt):
         "lesson": lesson,
         "word": word,
     }
-    return render(request, "base/authenticated/word_details.html", context)
+    return render(request, "base/authenticated/lesson_repository/word_details.html", context)
 
 
 @login_required(login_url="login")
@@ -1152,14 +1152,22 @@ def practice(request, user_lesson_id, mode="normal"):
         }
         return redirect("practice-feedback", user_lesson_id=user_lesson_id, mode=mode)
 
+    # Get breadcrumb path from lesson's directory
+    current_directory = user_word.user_lesson.directory
+    if not current_directory:
+        current_directory = UserDirectory.get_or_create_root_directory(request.user)
+    breadcrumb_path = current_directory.get_path()
+
     return render(
         request,
         "base/authenticated/practice.html",
         {
             "user_word": user_word,
+            "user_lesson": user_word.user_lesson,
             "user_lesson_id": user_lesson_id,
             "question": question,
             "mode": mode,
+            "breadcrumb_path": breadcrumb_path,
         },
     )
 
@@ -1198,14 +1206,22 @@ def practice_feedback(request, user_lesson_id, mode="normal"):
         request.session.pop(answer_key, None)
         return redirect("practice", user_lesson_id=user_lesson_id, mode=mode)
 
+    # Get breadcrumb path from lesson's directory
+    current_directory = user_word.user_lesson.directory
+    if not current_directory:
+        current_directory = UserDirectory.get_or_create_root_directory(request.user)
+    breadcrumb_path = current_directory.get_path()
+
     context = {
         "user_word": user_word,
+        "user_lesson": user_word.user_lesson,
         "user_lesson_id": user_lesson_id,
         "answer": answer_data["answer"],
         "correct": answer_data["correct"],
         "diff_html": answer_data.get("diff_html", ""),
         "lev_distance": answer_data.get("lev_distance", ""),
         "mode": mode,
+        "breadcrumb_path": breadcrumb_path,
     }
     return render(request, "base/authenticated/practice_feedback.html", context)
 
@@ -1269,6 +1285,10 @@ def import_lesson_json(request):
             messages.error(request, "Missing required fields in JSON.")
             return redirect("import-lesson-json")
 
+        # Get user profile for auto-generate hints
+        user_profile = UserProfile.objects.get_or_create(user=request.user)[0]
+        auto_generate = user_profile.auto_generate_hints
+
         # Get or create languages
         prompt_lang, _ = Language.objects.get_or_create(name=data["prompt_language"])
         translation_lang, _ = Language.objects.get_or_create(
@@ -1297,12 +1317,15 @@ def import_lesson_json(request):
             # Validate word fields
             if not all(k in word for k in ("prompt", "translation")):
                 continue  # skip incomplete word entries
+            hint_value = word.get("hint", "")
+            if not hint_value and auto_generate and word["prompt"]:
+                hint_value = word["prompt"][0].upper()
             Word.objects.create(
                 lesson=lesson,
                 prompt=word["prompt"],
                 translation=word["translation"],
                 usage=word.get("usage", ""),
-                hint=word.get("hint", ""),
+                hint=hint_value,
             )
 
         # Get or create root directory for the user
@@ -1330,8 +1353,15 @@ def import_lesson_json(request):
         messages.success(request, "Lesson imported successfully!")
         return redirect("my-lesson-details", my_lesson_id=user_lesson.id)
 
-    return render(request, "base/authenticated/import_lesson_json.html")
+    # Get breadcrumb path for root directory
+    root_directory = UserDirectory.get_or_create_root_directory(request.user)
+    breadcrumb_path = root_directory.get_path()
 
+    context = {
+        "breadcrumb_path": breadcrumb_path,
+    }   
+    
+    return render(request, "base/authenticated/import_lesson_json.html", context)
 
 @login_required(login_url="login")
 def export_lesson_json(request, lesson_id):
@@ -1372,7 +1402,19 @@ def export_lesson_json(request, lesson_id):
 @login_required(login_url="login")
 def generate_lesson_audio_start(request, my_lesson_id):
     myLesson = get_object_or_404(UserLesson, id=my_lesson_id, user=request.user)
-    return render(request, "base/authenticated/generate_lesson_audio.html", {"my_lesson": myLesson})
+    
+    # Get breadcrumb path from lesson's directory
+    current_directory = myLesson.directory
+    if not current_directory:
+        current_directory = UserDirectory.get_or_create_root_directory(request.user)
+    breadcrumb_path = current_directory.get_path()
+
+    context = {
+        "my_lesson": myLesson,
+        "breadcrumb_path": breadcrumb_path,
+    }
+    
+    return render(request, "base/authenticated/generate_lesson_audio.html", context)
 
 
 @login_required(login_url="login")
@@ -1577,9 +1619,13 @@ def renameDirectory(request, directory_id):
     else:
         form = UserDirectoryForm(instance=directory, user=request.user, parent_directory=directory.parent_directory)
     
+    # Build breadcrumb path
+    breadcrumb_path = directory.parent_directory.get_path()
+    
     context = {
         "form": form,
         "directory": directory,
+        "breadcrumb_path": breadcrumb_path,
     }
     return render(request, "base/authenticated/rename_directory.html", context)
 
@@ -1610,9 +1656,13 @@ def moveDirectory(request, directory_id):
     else:
         form = MoveDirectoryForm(user=request.user, current_directory=directory)
     
+    # Build breadcrumb path
+    breadcrumb_path = directory.parent_directory.get_path()
+    
     context = {
         "form": form,
         "directory": directory,
+        "breadcrumb_path": breadcrumb_path,
     }
     return render(request, "base/authenticated/move_directory.html", context)
 
@@ -1665,11 +1715,15 @@ def deleteDirectory(request, directory_id):
             return redirect("my-lessons-directory", directory_id=parent_id)
         return redirect("my-lessons")
     
+    # Build breadcrumb path
+    breadcrumb_path = directory.parent_directory.get_path()
+    
     context = {
         "directory": directory,
         "subdirectory_count": subdirectory_count,
         "lesson_count": lesson_count,
         "has_contents": subdirectory_count > 0 or lesson_count > 0,
+        "breadcrumb_path": breadcrumb_path,
     }
     return render(request, "base/authenticated/delete_directory.html", context)
 
@@ -1694,12 +1748,16 @@ def moveLesson(request, my_lesson_id):
         if user_lesson.directory:
             form.fields["directory"].initial = user_lesson.directory
     
-    cancel_url = reverse('my-lessons-directory', kwargs={'pk': request.user.id, 'directory_id': current_directory_id}) if current_directory_id else reverse('my-lessons', kwargs={'pk': request.user.id})
+    cancel_url = reverse('my-lessons-directory', kwargs={'directory_id': current_directory_id}) if current_directory_id else reverse('my-lessons')
     
+    # Build breadcrumb path
+    breadcrumb_path = user_lesson.directory.get_path() if user_lesson.directory else []
+
     context = {
         "form": form,
         "user_lesson": user_lesson,
         "cancel_url": cancel_url,
+        "breadcrumb_path": breadcrumb_path,
     }
     return render(request, "base/authenticated/move_lesson.html", context)
 
@@ -1711,6 +1769,8 @@ def dragDropMove(request):
     item_type = request.POST.get("item_type")
     item_id = request.POST.get("item_id")
     target_directory_id = request.POST.get("target_directory_id")
+    # Get the directory where the move was initiated (source directory)
+    source_directory_id = request.POST.get("source_directory_id")
     
     if not all([item_type, item_id, target_directory_id]):
         messages.error(request, "Invalid move operation.")
@@ -1765,4 +1825,11 @@ def dragDropMove(request):
     else:
         messages.error(request, "Invalid item type.")
     
-    return redirect("my-lessons-directory", directory_id=target_directory_id)
+    # Redirect to the directory where the move was initiated, or to 'my-lessons' if unknown
+    if source_directory_id:
+        try:
+            source_directory_id = int(source_directory_id)
+            return redirect("my-lessons-directory", directory_id=source_directory_id)
+        except Exception:
+            pass
+    return redirect("my-lessons")

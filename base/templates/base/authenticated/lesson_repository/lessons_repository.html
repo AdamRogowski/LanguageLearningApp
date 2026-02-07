@@ -1,7 +1,6 @@
-{% extends 'base/layouts/my_lessons_layout.html' %}
+{% extends 'base/layouts/lessons_repository_layout.html' %}
 
 {% block tab_content %}
-<h1><a href="{% url 'lessons-repository' %}">Lessons Repository</a></h1>
 
 <form method="GET" action="{% url 'lessons-repository' %}">
     <input type="text" name="q" placeholder="Search...">

@@ -1,8 +1,7 @@
-{% extends 'base/layouts/user_layout.html' %}
+{% extends 'base/layouts/my_lessons_layout.html' %}
 
 {% block tab_content %}
 
-{% include 'base/authenticated/includes/breadcrumb.html' %}
 <h2><a href="{% url 'my-lesson-details' my_word.user_lesson.id %}">{{ my_word.user_lesson.lesson.title }}</a></h2>
 {{ my_lesson.lesson.access_type.name}}
 

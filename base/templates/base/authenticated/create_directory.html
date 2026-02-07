@@ -1,23 +1,6 @@
-{% extends 'base/layouts/user_layout.html' %}
+{% extends 'base/layouts/my_lessons_layout.html' %}
 
 {% block tab_content %}
-
-<!-- Breadcrumb Navigation -->
-<nav class="breadcrumb-nav">
-    <span>📁 </span>
-    {% for dir in breadcrumb_path %}
-        {% if forloop.last %}
-            <strong>{{ dir.name }}</strong>
-        {% else %}
-            {% if dir.is_root %}
-                <a href="{% url 'my-lessons' %}">{{ dir.name }}</a>
-            {% else %}
-                <a href="{% url 'my-lessons-directory' dir.id %}">{{ dir.name }}</a>
-            {% endif %}
-            <span> / </span>
-        {% endif %}
-    {% endfor %}
-</nav>
 
 <h1>Create New Folder</h1>
 

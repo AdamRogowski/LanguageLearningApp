@@ -1,12 +1,7 @@
-{% extends 'base/layouts/authenticated.html' %}
-{% block authenticated_content %}
-<h2>
-    {% if mode == "reverse" %}
-        Reverse Practice Feedback
-    {% else %}
-        Practice Feedback
-    {% endif %}
-</h2>
+{% extends 'base/layouts/my_lessons_layout.html' %}
+
+{% block tab_content %}
+<h2><a href="{% url 'my-lesson-details' my_lesson_id=user_lesson_id %}">{{ user_lesson.lesson.title }}</a></h2>
 
 {% if user_word.word.has_prompt_audio %}
     <audio id="prompt_audio" src="{{ user_word.word.prompt_audio.url }}?v={{ user_word.word.updated|date:'U' }}" autoplay>
@@ -158,4 +153,35 @@ function toggleRollout(id) {
     font-weight: bold;
 }
 </style>
-{% endblock authenticated_content %}
+
+<script>
+function toggleRollout(id) {
+    var el = document.getElementById(id);
+    if (el.style.display === "none") {
+        el.style.display = "block";
+    } else {
+        el.style.display = "none";
+    }
+}
+
+// Keyboard shortcuts for toggling sections
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'F10') {
+        event.preventDefault();
+        toggleRollout('hint');
+    } else if (event.key === 'F11') {
+        event.preventDefault();
+        toggleRollout('usage');
+        // Play usage audio if available
+        var audio = document.getElementById('usage_audio');
+        if (audio) {
+            audio.play();
+        }
+    } else if (event.key === 'F12') {
+        event.preventDefault();
+        toggleRollout('notes');
+    }
+});
+</script>
+
+{% endblock tab_content %}

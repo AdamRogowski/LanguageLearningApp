@@ -2,14 +2,12 @@
 
 {% block header_tabs %}
     <nav class="tabs">
-        <a href="{% url 'my-lessons' %}" class="active">My Lessons</a>
-        <a href="{% url 'lessons-repository' %}">Lessons Repository</a>
+        <a href="{% url 'my-lessons' %}">My Lessons</a>
+        <a href="{% url 'lessons-repository' %}" class="active">Lessons Repository</a>
     </nav>
 {% endblock %}
 
-{% block breadcrumb_content %}
-    {% include 'base/authenticated/includes/breadcrumb.html' %}
-{% endblock %}
+{% block breadcrumb_content %}{% endblock %}
 
 {% block authenticated_content %}
 

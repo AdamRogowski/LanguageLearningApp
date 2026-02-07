@@ -1,12 +1,7 @@
-{% extends 'base/layouts/authenticated.html' %}
-{% block authenticated_content %}
-<h2>
-    {% if mode == "reverse" %}
-        Reverse Practice Mode
-    {% else %}
-        Practice Mode
-    {% endif %}
-</h2>
+{% extends 'base/layouts/my_lessons_layout.html' %}
+
+{% block tab_content %}
+<h2><a href="{% url 'my-lesson-details' my_lesson_id=user_lesson_id %}">{{ user_lesson.lesson.title }}</a></h2>
 <p>
     {% if mode == "reverse" %}
         Translate: <strong>{{ question }}</strong>
@@ -65,6 +60,25 @@ function toggleRollout(id) {
         el.style.display = "none";
     }
 }
+
+// Keyboard shortcuts for toggling sections
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'F10') {
+        event.preventDefault();
+        toggleRollout('hint');
+    } else if (event.key === 'F11') {
+        event.preventDefault();
+        toggleRollout('usage');
+        // Play usage audio if available
+        var audio = document.getElementById('usage_audio');
+        if (audio) {
+            audio.play();
+        }
+    } else if (event.key === 'F12') {
+        event.preventDefault();
+        toggleRollout('notes');
+    }
+});
 </script>
 
-{% endblock authenticated_content %}
+{% endblock tab_content %}
