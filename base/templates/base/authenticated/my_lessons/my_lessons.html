@@ -78,6 +78,7 @@
                 </span>
             </div>    
         {% endfor %}
+            
         {% else %}
             {% if not subdirectories %}
             <p>No lessons or folders in this directory.</p>
@@ -105,6 +106,9 @@
     .directories-list, .lessons-list {
         margin-bottom: 20px;
         margin-right: 40px;
+    }
+    .my-lessons-container {
+        padding-bottom: 120px; /* Extra space for dropdown menus */
     }
     .directory-item, .lesson-item {
         display: flex;

@@ -2,12 +2,6 @@
 
 {% block tab_content %}
 
-<h1>Move Lesson</h1>
-
-<p>Move lesson <strong>"{{ user_lesson.lesson.title }}"</strong> to a different folder:</p>
-
-<hr>
-
 <form method="POST">
     {% csrf_token %}
     

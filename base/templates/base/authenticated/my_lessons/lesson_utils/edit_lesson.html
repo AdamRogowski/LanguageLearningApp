@@ -1,7 +1,7 @@
 {% extends 'base/layouts/my_lessons_layout.html' %}
 
 {% block tab_content %}
-<h2><a href="{% url 'my-lesson-details' my_lesson.id %}">{{ my_lesson.lesson.title }}</a></h2>
+
 
 <a href="{% url 'reset-progress' my_lesson.id %}"><button>Reset Progress</button></a>
 <a href="{% url 'generate-lesson-audio-start' my_lesson.id %}">

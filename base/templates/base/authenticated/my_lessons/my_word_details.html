@@ -2,16 +2,6 @@
 
 {% block tab_content %}
 
-<h2><a href="{% url 'my-lesson-details' my_word.user_lesson.id %}">{{ my_word.user_lesson.lesson.title }}</a></h2>
-{{ my_lesson.lesson.access_type.name}}
-
-<h5>Lesson description: {{ my_word.user_lesson.lesson.description }}</h5>
-
-<h5>Target progress: {{ my_word.user_lesson.target_progress }}</h5>
-
-
- 
-
 <div class="my-word-container">
     <div>
         <h5>Prompt:  
@@ -36,7 +26,7 @@
         <h5>Hint: {{ my_word.word.hint }} </h5>
         <h5>Created: {{ my_word.word.created }} </h5>
         <h5>Last updated: {{ my_word.word.updated }} </h5>
-        <h5>Current Progress: {{ my_word.current_progress }} </h5>
+        <h5>Progress: {{ my_word.current_progress }}/{{ my_word.user_lesson.target_progress }}</h5>
         <h5>Notes: {{ my_word.notes }} </h5>
     </div>    
 

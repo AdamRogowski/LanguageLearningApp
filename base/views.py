@@ -322,6 +322,7 @@ def myLessonDetails(request, my_lesson_id):
         "is_author": is_author,
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
+        "breadcrumb_lesson": myLesson,
     }
     return render(request, "base/authenticated/my_lessons/my_lesson_details.html", context)
 
@@ -382,6 +383,7 @@ def deleteMyLesson(request, my_lesson_id):
         "is_private": is_private,
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
+        "breadcrumb_lesson": myLesson,
     }
     return render(request, "base/authenticated/my_lessons/lesson_utils/delete_my_lesson.html", context)
 
@@ -411,6 +413,7 @@ def myWordDetails(request, my_word_id):
         "my_word": myWord,
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
+        "breadcrumb_lesson": myWord.user_lesson,
     }
     return render(request, "base/authenticated/my_lessons/my_word_details.html", context)
 
@@ -896,6 +899,7 @@ def editLesson(request, my_lesson_id):
         "my_lesson": myLesson,
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
+        "breadcrumb_lesson": myLesson,
     }
     return render(request, "base/authenticated/my_lessons/lesson_utils/edit_lesson.html", context)
 
@@ -923,6 +927,7 @@ def resetProgress(request, my_lesson_id):
         "my_lesson": myLesson,
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
+        "breadcrumb_lesson": myLesson,
     }
     return render(request, "base/authenticated/my_lessons/practice/reset_progress.html", context)
 
@@ -1041,6 +1046,7 @@ def editWord(request, my_word_id):
         "my_word": myWord,
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
+        "breadcrumb_lesson": myWord.user_lesson,
     }
     return render(request, "base/authenticated/my_lessons/word_utils/edit_word.html", context)
 
@@ -1097,6 +1103,7 @@ def deleteWord(request, my_word_id):
         "my_word": myWord,
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
+        "breadcrumb_lesson": myWord.user_lesson,
     }
 
     return render(request, "base/authenticated/my_lessons/word_utils/delete_word.html", context)
@@ -1168,6 +1175,7 @@ def practice(request, user_lesson_id, mode="normal"):
             "question": question,
             "mode": mode,
             "breadcrumb_path": breadcrumb_path,
+            "breadcrumb_lesson": user_word.user_lesson,
         },
     )
 
@@ -1222,6 +1230,7 @@ def practice_feedback(request, user_lesson_id, mode="normal"):
         "lev_distance": answer_data.get("lev_distance", ""),
         "mode": mode,
         "breadcrumb_path": breadcrumb_path,
+        "breadcrumb_lesson": user_word.user_lesson,
     }
     return render(request, "base/authenticated/my_lessons/practice/practice_feedback.html", context)
 
@@ -1412,6 +1421,7 @@ def generate_lesson_audio_start(request, my_lesson_id):
     context = {
         "my_lesson": myLesson,
         "breadcrumb_path": breadcrumb_path,
+        "breadcrumb_lesson": myLesson,
     }
     
     return render(request, "base/authenticated/my_lessons/lesson_utils/generate_lesson_audio.html", context)
@@ -1742,13 +1752,17 @@ def moveLesson(request, my_lesson_id):
             user_lesson.directory = new_directory
             user_lesson.save()
             messages.success(request, f"Lesson '{user_lesson.lesson.title}' moved successfully!")
-            return redirect("my-lessons-directory", directory_id=new_directory.id)
+            next_url = request.GET.get('next')
+            if next_url:
+                return redirect(next_url)
+            else:
+                return redirect("my-lessons-directory", directory_id=new_directory.id)
     else:
         form = MoveLessonForm(user=request.user)
         if user_lesson.directory:
             form.fields["directory"].initial = user_lesson.directory
     
-    cancel_url = reverse('my-lessons-directory', kwargs={'directory_id': current_directory_id}) if current_directory_id else reverse('my-lessons')
+    cancel_url = request.GET.get('next') or (reverse('my-lessons-directory', kwargs={'directory_id': current_directory_id}) if current_directory_id else reverse('my-lessons'))
     
     # Build breadcrumb path
     breadcrumb_path = user_lesson.directory.get_path() if user_lesson.directory else []
@@ -1758,6 +1772,7 @@ def moveLesson(request, my_lesson_id):
         "user_lesson": user_lesson,
         "cancel_url": cancel_url,
         "breadcrumb_path": breadcrumb_path,
+        "breadcrumb_lesson": user_lesson,
     }
     return render(request, "base/authenticated/my_lessons/fs_utils/move_lesson.html", context)
 

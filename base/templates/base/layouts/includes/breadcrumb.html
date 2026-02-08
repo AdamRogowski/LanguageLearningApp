@@ -1,6 +1,7 @@
 <!-- Breadcrumb Navigation Include -->
 {# Usage: include 'base/layouts/includes/breadcrumb.html' #}
 {# Requires context: breadcrumb_path, request.user #}
+{# Optional: breadcrumb_lesson - adds lesson name to breadcrumb #}
 
 <nav class="breadcrumb-nav">
     <span>📁 </span>
@@ -10,10 +11,13 @@
         {% else %}
             <a href="{% url 'my-lessons-directory' dir.id %}">{{ dir.name }}</a>
         {% endif %}
-        {% if not forloop.last %}
+        {% if not forloop.last or breadcrumb_lesson %}
             <span> / </span>
         {% endif %}
     {% endfor %}
+    {% if breadcrumb_lesson %}
+        <a href="{% url 'my-lesson-details' breadcrumb_lesson.id %}" style="font-weight: bold;">{{ breadcrumb_lesson.lesson.title }}</a>
+    {% endif %}
 </nav>
 
 <style>
