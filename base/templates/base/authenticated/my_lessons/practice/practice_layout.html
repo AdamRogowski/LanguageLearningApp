@@ -1,0 +1,141 @@
+{% extends 'base/layouts/my_lessons_layout.html' %}
+
+{% block tab_content %}
+<h2><a href="{% url 'my-lesson-details' my_lesson_id=user_lesson_id %}">{{ user_lesson.lesson.title }}</a></h2>
+
+{% block practice_content %}{% endblock %}
+
+<!-- Rollout for hint, usage, and notes -->
+<div>
+    <button type="button" onclick="toggleRollout('hint')">Show/Hide Hint</button>
+    <div id="hint" style="display:none; margin-bottom:1em;">
+        <em>{{ user_word.word.hint|default:"No hint available." }}</em>
+    </div>
+</div>
+<div>
+    <button type="button" onclick="toggleRollout('usage')">Show/Hide Usage</button>
+    <div id="usage" style="display:none; margin-bottom:1em;">
+        <em>{{ user_word.word.usage|default:"No usage example available." }}</em>
+        {% if user_word.word.has_usage_audio %}
+            <audio id="usage_audio" src="{{ user_word.word.usage_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
+            <button type="button" onclick="document.getElementById('usage_audio').play()">🔊 Listen to usage</button>
+        {% elif user_word.word.usage %}
+            <button type="button" disabled title="Audio not generated for this word" class="audio-disabled">🔇 No audio</button>
+        {% endif %}
+    </div>
+</div>
+<div>
+    <button type="button" onclick="toggleRollout('notes')">Show/Hide Notes</button>
+    <div id="notes" style="display:none;">
+        <em>{{ user_word.notes|default:"No notes available." }}</em>
+    </div>
+</div>
+
+{% block after_rollout %}
+<form method="post" action="{% url 'cancel-practice' user_lesson_id=user_lesson_id %}">
+    {% csrf_token %}
+    <button type="submit">Cancel Practice</button>
+</form>
+{% endblock %}
+
+<!-- Styles -->
+<style>
+.diff {
+    background-color: #ffcccc;
+    color: #a00;
+    font-weight: bold;
+}
+
+.audio-autoplay-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    background: rgba(255, 193, 7, 0.95);
+    color: #000;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    min-width: 200px;
+    max-width: 350px;
+    font-size: 1rem;
+}
+
+.audio-autoplay-content {
+    font-weight: 500;
+}
+</style>
+
+<!-- Scripts -->
+<script>
+// Rollout toggle functionality
+function toggleRollout(id) {
+    var el = document.getElementById(id);
+    if (el.style.display === "none") {
+        el.style.display = "block";
+    } else {
+        el.style.display = "none";
+    }
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'F1') {
+        event.preventDefault();
+        toggleRollout('hint');
+    } else if (event.key === 'F2') {
+        event.preventDefault();
+        toggleRollout('usage');
+        var audio = document.getElementById('usage_audio');
+        if (audio) {
+            audio.play();
+        }
+    } else if (event.key === 'F3') {
+        event.preventDefault();
+        toggleRollout('notes');
+    }
+});
+
+// Audio autoplay detection and handling
+document.addEventListener('DOMContentLoaded', function() {
+    // One-time autoplay capability check
+    if (!sessionStorage.getItem('autoplayChecked')) {
+        var testAudio = document.createElement('audio');
+        testAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+        var playPromise = testAudio.play();
+        
+        if (playPromise !== undefined) {
+            playPromise.then(function() {
+                sessionStorage.setItem('autoplayAllowed', 'true');
+                sessionStorage.setItem('autoplayChecked', 'true');
+            }).catch(function(error) {
+                sessionStorage.setItem('autoplayAllowed', 'false');
+                sessionStorage.setItem('autoplayChecked', 'true');
+            });
+        }
+    }
+    
+    // Handle prompt audio if present (feedback page)
+    var promptAudio = document.getElementById('prompt_audio');
+    if (promptAudio) {
+        var messageDiv = document.getElementById('audio-autoplay-message');
+        
+        // Try autoplay
+        var playPromise = promptAudio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(function(error) {
+                // Show warning only once per session
+                if (messageDiv && !sessionStorage.getItem('autoplayWarningShown')) {
+                    messageDiv.style.display = 'block';
+                    setTimeout(function() {
+                        messageDiv.style.display = 'none';
+                    }, 5000);
+                    sessionStorage.setItem('autoplayWarningShown', 'true');
+                }
+            });
+        }
+    }
+});
+</script>
+
+{% endblock %}

@@ -1,4 +1,4 @@
-{% extends 'base/layouts/authenticated.html' %}
+{% extends 'base/layouts/authenticated_layout.html' %}
 
 {% block header_tabs %}
     <nav class="tabs">
@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block breadcrumb_content %}
-    {% include 'base/authenticated/includes/breadcrumb.html' %}
+    {% include 'base/layouts/includes/breadcrumb.html' %}
 {% endblock %}
 
 {% block authenticated_content %}

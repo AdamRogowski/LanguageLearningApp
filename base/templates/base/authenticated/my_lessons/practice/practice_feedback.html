@@ -1,0 +1,48 @@
+{% extends 'base/authenticated/my_lessons/practice/practice_layout.html' %}
+
+{% block practice_content %}
+<!-- Audio element and warning message -->
+{% if user_word.word.has_prompt_audio %}
+    <audio id="prompt_audio" src="{{ user_word.word.prompt_audio.url }}?v={{ user_word.word.updated|date:'U' }}" autoplay>
+        Your browser does not support the audio element.
+    </audio>
+    <button type="button" onclick="document.getElementById('prompt_audio').play()">🔊 Play Prompt Audio</button>
+    
+    <div id="audio-autoplay-message" class="audio-autoplay-message" style="display: none;">
+        <div class="audio-autoplay-content">
+            Audio autoplay was blocked by your browser. Please check your browser settings to allow audio playback for this site, or click the "🔊 Play Prompt Audio" button below.
+        </div>
+    </div>
+{% endif %}
+
+<!-- Feedback display -->
+{% if correct %}
+    <div style="color: green;"><strong>Correct!</strong></div>
+    {% if lev_distance > 0 %}
+        <div>
+            Your answer: <code>{{ answer }}</code><br>
+            Correct answer: <code>{{ diff_html|safe }}</code><br>
+        </div>
+    {% endif %}
+    <form method="post" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" autofocus>Continue</button>
+    </form>
+{% else %}
+    <div style="color: red;">
+        <strong>Incorrect!</strong><br>
+        Your answer: <code>{{ answer }}</code><br>
+        Difference: <code>{{ diff_html|safe }}</code><br>
+        <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" name="accept_as_correct" value="1">Accept my answer as correct</button>
+            <button type="submit" autofocus>Continue</button>
+        </form>
+    </div>
+{% endif %}
+
+<form method="get" action="{% url 'edit-word' user_word.id %}" style="display:inline;">
+    <input type="hidden" name="next" value="{% url 'practice-feedback' user_lesson_id=user_lesson_id mode=mode %}">
+    <button type="submit">Edit This Word</button>
+</form>
+{% endblock %}

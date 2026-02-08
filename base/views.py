@@ -160,7 +160,7 @@ def myLessons(request, directory_id=None):
         "root_directory": root_directory,
         "directory_form": directory_form,
     }
-    return render(request, "base/authenticated/my_lessons.html", context)
+    return render(request, "base/authenticated/my_lessons/my_lessons.html", context)
 
 
 @login_required(login_url="login")
@@ -323,7 +323,7 @@ def myLessonDetails(request, my_lesson_id):
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/authenticated/my_lesson_details.html", context)
+    return render(request, "base/authenticated/my_lessons/my_lesson_details.html", context)
 
 
 @login_required(login_url="login")
@@ -383,7 +383,7 @@ def deleteMyLesson(request, my_lesson_id):
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/authenticated/delete_my_lesson.html", context)
+    return render(request, "base/authenticated/my_lessons/lesson_utils/delete_my_lesson.html", context)
 
 
 @login_required(login_url="login")
@@ -412,7 +412,7 @@ def myWordDetails(request, my_word_id):
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/authenticated/my_word_details.html", context)
+    return render(request, "base/authenticated/my_lessons/my_word_details.html", context)
 
 @login_required(login_url="login")
 def lessonsRepository(request):
@@ -630,7 +630,7 @@ def createLesson(request):
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/authenticated/create_lesson.html", context)
+    return render(request, "base/authenticated/my_lessons/lesson_utils/create_lesson.html", context)
 
 
 @login_required(login_url="login")
@@ -897,7 +897,7 @@ def editLesson(request, my_lesson_id):
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/authenticated/edit_lesson.html", context)
+    return render(request, "base/authenticated/my_lessons/lesson_utils/edit_lesson.html", context)
 
 
 @login_required(login_url="login")
@@ -924,7 +924,7 @@ def resetProgress(request, my_lesson_id):
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/authenticated/reset_progress.html", context)
+    return render(request, "base/authenticated/my_lessons/practice/reset_progress.html", context)
 
 
 @login_required(login_url="login")
@@ -1042,7 +1042,7 @@ def editWord(request, my_word_id):
         "current_directory": current_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/authenticated/edit_word.html", context)
+    return render(request, "base/authenticated/my_lessons/word_utils/edit_word.html", context)
 
 
 @login_required(login_url="login")
@@ -1099,7 +1099,7 @@ def deleteWord(request, my_word_id):
         "breadcrumb_path": breadcrumb_path,
     }
 
-    return render(request, "base/authenticated/delete_word.html", context)
+    return render(request, "base/authenticated/my_lessons/word_utils/delete_word.html", context)
 
 
 # ------------Practice Views------------#
@@ -1160,7 +1160,7 @@ def practice(request, user_lesson_id, mode="normal"):
 
     return render(
         request,
-        "base/authenticated/practice.html",
+        "base/authenticated/my_lessons/practice/practice.html",
         {
             "user_word": user_word,
             "user_lesson": user_word.user_lesson,
@@ -1223,7 +1223,7 @@ def practice_feedback(request, user_lesson_id, mode="normal"):
         "mode": mode,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/authenticated/practice_feedback.html", context)
+    return render(request, "base/authenticated/my_lessons/practice/practice_feedback.html", context)
 
 
 @login_required(login_url="login")
@@ -1361,7 +1361,7 @@ def import_lesson_json(request):
         "breadcrumb_path": breadcrumb_path,
     }   
     
-    return render(request, "base/authenticated/import_lesson_json.html", context)
+    return render(request, "base/authenticated/my_lessons/lesson_utils/import_lesson_json.html", context)
 
 @login_required(login_url="login")
 def export_lesson_json(request, lesson_id):
@@ -1414,7 +1414,7 @@ def generate_lesson_audio_start(request, my_lesson_id):
         "breadcrumb_path": breadcrumb_path,
     }
     
-    return render(request, "base/authenticated/generate_lesson_audio.html", context)
+    return render(request, "base/authenticated/my_lessons/lesson_utils/generate_lesson_audio.html", context)
 
 
 @login_required(login_url="login")
@@ -1485,7 +1485,7 @@ def profile_view(request):
         "memory_usage_mb": memory_mb,
     }
 
-    return render(request, "base/authenticated/profile.html", context)
+    return render(request, "base/authenticated/user_profile/profile.html", context)
 
 
 @login_required(login_url="login")
@@ -1504,7 +1504,7 @@ def settings_view(request):
         profile_form = UserProfileForm(instance=user_profile)
     return render(
         request,
-        "base/authenticated/settings.html",
+        "base/authenticated/user_profile/settings.html",
         {"user_form": user_form, "profile_form": profile_form},
     )
 
@@ -1586,7 +1586,7 @@ def createDirectory(request, directory_id):
         "parent_directory": parent_directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/authenticated/create_directory.html", context)
+    return render(request, "base/authenticated/my_lessons/fs_utils/create_directory.html", context)
 
 
 @login_required(login_url="login")
@@ -1627,7 +1627,7 @@ def renameDirectory(request, directory_id):
         "directory": directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/authenticated/rename_directory.html", context)
+    return render(request, "base/authenticated/my_lessons/fs_utils/rename_directory.html", context)
 
 
 @login_required(login_url="login")
@@ -1664,7 +1664,7 @@ def moveDirectory(request, directory_id):
         "directory": directory,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/authenticated/move_directory.html", context)
+    return render(request, "base/authenticated/my_lessons/fs_utils/move_directory.html", context)
 
 
 @login_required(login_url="login")
@@ -1725,7 +1725,7 @@ def deleteDirectory(request, directory_id):
         "has_contents": subdirectory_count > 0 or lesson_count > 0,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/authenticated/delete_directory.html", context)
+    return render(request, "base/authenticated/my_lessons/fs_utils/delete_directory.html", context)
 
 
 @login_required(login_url="login")
@@ -1759,7 +1759,7 @@ def moveLesson(request, my_lesson_id):
         "cancel_url": cancel_url,
         "breadcrumb_path": breadcrumb_path,
     }
-    return render(request, "base/authenticated/move_lesson.html", context)
+    return render(request, "base/authenticated/my_lessons/fs_utils/move_lesson.html", context)
 
 
 @login_required(login_url="login")

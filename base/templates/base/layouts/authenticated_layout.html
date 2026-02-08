@@ -1,8 +1,8 @@
-{% extends 'base/layouts/base.html' %}
+{% extends 'base/layouts/base_layout.html' %}
 
 {% block content %}
     <header>
-        {% include 'base/authenticated/header.html' %}
+        {% include 'base/layouts/includes/header.html' %}
 
         <div class="header-tabs">
         {% block header_tabs %}{% endblock %}

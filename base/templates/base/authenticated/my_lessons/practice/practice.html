@@ -1,0 +1,22 @@
+{% extends 'base/authenticated/my_lessons/practice/practice_layout.html' %}
+
+{% block practice_content %}
+<p>
+    {% if mode == "reverse" %}
+        Translate: <strong>{{ question }}</strong>
+    {% else %}
+        What is the prompt for: <strong>{{ question }}</strong>
+    {% endif %}
+</p>
+
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="answer" autocomplete="off" autofocus>
+    <button type="submit">Submit</button>
+</form>
+
+<form method="get" action="{% url 'edit-word' user_word.id %}" style="display:inline;">
+    <input type="hidden" name="next" value="{% url 'practice' user_lesson_id=user_lesson_id mode=mode %}">
+    <button type="submit">Edit This Word</button>
+</form>
+{% endblock %}
