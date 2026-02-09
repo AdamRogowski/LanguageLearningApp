@@ -59,6 +59,7 @@ urlpatterns = [
     path("copy_lesson/<int:my_lesson_id>/", views.copyLesson, name="copy-lesson"),
     path("edit_lesson/<int:my_lesson_id>/", views.editLesson, name="edit-lesson"),
     path("edit_word/<int:my_word_id>/", views.editWord, name="edit-word"),
+    path("add_word/<int:my_lesson_id>/", views.addWord, name="add-word"),
     path("delete_word/<int:my_word_id>/", views.deleteWord, name="delete-word"),
     path(
         "start_practice/<int:user_lesson_id>/<str:mode>/",

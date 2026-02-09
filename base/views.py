@@ -1109,6 +1109,70 @@ def deleteWord(request, my_word_id):
     return render(request, "base/authenticated/my_lessons/word_utils/delete_word.html", context)
 
 
+@login_required(login_url="login")
+@transaction.atomic
+def addWord(request, my_lesson_id):
+    myLesson = get_object_or_404(UserLesson, id=my_lesson_id, user=request.user)
+
+    if not (
+        request.user == myLesson.lesson.author
+        or myLesson.lesson.access_type.name in ["write"]
+    ):
+        return HttpResponse("You do not have rights to edit this lesson!", status=403)
+
+    if request.method == "POST":
+        add_word_form = UserWordForm(request.POST)
+        if add_word_form.is_valid():
+            # Get user profile for auto-generate hints
+            user_profile = UserProfile.objects.get_or_create(user=request.user)[0]
+            auto_generate = user_profile.auto_generate_hints
+
+            # Handle hint generation
+            hint_value = add_word_form.cleaned_data["hint"]
+            if not hint_value and auto_generate and add_word_form.cleaned_data["prompt"]:
+                hint_value = add_word_form.cleaned_data["prompt"][0].upper()
+
+            # Create new Word
+            word = Word.objects.create(
+                lesson=myLesson.lesson,
+                prompt=add_word_form.cleaned_data["prompt"],
+                translation=add_word_form.cleaned_data["translation"],
+                usage=add_word_form.cleaned_data["usage"],
+                hint=hint_value,
+            )
+            # Create UserWord
+            UserWord.objects.create(
+                user_lesson=myLesson,
+                word=word,
+                notes=add_word_form.cleaned_data["notes"],
+            )
+            # Update the lesson's updated time
+            myLesson.lesson.updated = timezone.now()
+            myLesson.lesson.changes_log = (
+                myLesson.lesson.changes_log + "\n" if myLesson.lesson.changes_log else ""
+            ) + f"{timezone.now()} Word '{word.prompt}' added by {request.user.username}"
+            myLesson.lesson.save()
+            messages.success(request, "Word added successfully!")
+            return redirect(reverse("my-lesson-details", kwargs={"my_lesson_id": my_lesson_id}) + "?add=1")
+    else:
+        add_word_form = UserWordForm()
+
+    # Get breadcrumb path from lesson's directory
+    current_directory = myLesson.directory
+    if not current_directory:
+        current_directory = UserDirectory.get_or_create_root_directory(request.user)
+    breadcrumb_path = current_directory.get_path()
+
+    context = {
+        "add_word_form": add_word_form,
+        "my_lesson": myLesson,
+        "current_directory": current_directory,
+        "breadcrumb_path": breadcrumb_path,
+        "breadcrumb_lesson": myLesson,
+    }
+    return render(request, "base/authenticated/my_lessons/word_utils/add_word.html", context)
+
+
 # ------------Practice Views------------#
 
 

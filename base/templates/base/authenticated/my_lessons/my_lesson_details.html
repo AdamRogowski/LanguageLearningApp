@@ -2,7 +2,8 @@
 
 {% block tab_content %}
 
-<!-- Lesson Header Box -->
+<div class="page-wrapper">
+    <div class="main-content" id="main-content">
 <div class="lesson-header-box">
     <div class="lesson-description">
         <p>{{ my_lesson.lesson.description|default:"No description available." }}</p>
@@ -40,7 +41,7 @@
         <button type="submit" class="search-btn">🔍</button>
     </form>
     {% if can_edit %}
-    <span class="add-btn" title="Add new word (coming soon)">+</span>
+        <span class="add-btn" id="add-btn" title="Add new word">+</span>
     {% endif %}
 </div>
  
@@ -75,8 +76,62 @@
 
 </div>
 
+    </div>
+
+    <!-- Add Word Panel -->
+    <div id="add-word-panel" class="add-word-panel">
+    <span class="toggle-panel" id="toggle-panel" title="Toggle panel">&lt;</span>
+    <div class="panel-content">
+    <div class="panel-header">
+        <h3>Add New Word</h3>
+    </div>
+    <form id="add-word-form" method="POST" action="{% url 'add-word' my_lesson.id %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="id_prompt">Prompt</label>
+            <input type="text" name="prompt" id="id_prompt" required>
+        </div>
+        <div class="form-group">
+            <label for="id_translation">Translation</label>
+            <input type="text" name="translation" id="id_translation" required>
+        </div>
+        <div class="form-group">
+            <label for="id_usage">Usage</label>
+            <textarea name="usage" id="id_usage" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="id_hint">Hint</label>
+            <input type="text" name="hint" id="id_hint">
+        </div>
+        <div class="form-group">
+            <label for="id_notes">Notes</label>
+            <textarea name="notes" id="id_notes" rows="3"></textarea>
+        </div>
+        <button type="submit" class="add-word-submit">Add Word</button>
+    </form>
+    </div>
+    </div>
+</div>
+
 <!-- Word List Styles -->
 <style>
+    .page-wrapper {
+        display: flex;
+        width: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .main-content {
+        flex: 1;
+        overflow: visible;
+        margin-right: 30px; /* Space for the fixed panel tab */
+    }
+
+    .main-content.panel-open {
+        margin-right: calc(50% + 30px); /* Account for open panel plus gap */
+    }
+
     .my-lesson-container {
         padding-bottom: 120px; /* Extra space for dropdown menus */
     }
@@ -242,9 +297,10 @@
         transition: background-color 0.2s;
     }
 
-    .add-btn:hover {
-        background-color: #e9ecef;
-        color: #666;
+    .add-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
     }
 
     .words-header {
@@ -360,6 +416,121 @@
     .dropdown-menu a:hover {
         background: #f5f5f5;
     }
+
+    /* Add Word Panel */
+    .add-word-panel {
+        position: fixed;
+        right: 0;
+        margin-top: 200px;
+        margin-bottom: 340px;
+        margin-right: 20px;
+        top: 0;
+        bottom: 0;
+        width: 20px;
+        background: white;
+        border: 1px solid #e9ecef;
+        box-sizing: border-box;
+        overflow-y: hidden;
+        overflow-x: hidden;
+        box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        z-index: 100;
+    }
+
+    
+
+    .add-word-panel.open {
+        width: 50%;
+        padding: 20px 20px 20px 40px;
+        overflow-y: auto;
+    }
+
+    .panel-content {
+        display: none;
+    }
+
+    .add-word-panel.open .panel-content {
+        display: block;
+    }
+
+    .panel-header {
+        margin-bottom: 20px;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 10px;
+    }
+
+    .panel-header h3 {
+        margin: 0;
+        color: #495057;
+    }
+
+    .toggle-panel {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        font-size: 18px;
+        color: #999;
+        background: white;
+        border: 1px solid #e9ecef;
+        border-left: none;
+        width: 20px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0 4px 4px 0;
+        z-index: 10;
+    }
+
+    .toggle-panel:hover {
+        color: #666;
+        background-color: #f8f9fa;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: #495057;
+    }
+
+    .form-group input[type="text"],
+    .form-group textarea {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 0.9em;
+        box-sizing: border-box;
+    }
+
+    .form-group input[type="text"]:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .add-word-submit {
+        padding: 10px 20px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.2s;
+    }
+
+    .add-word-submit:hover {
+        background: #5568d3;
+    }
+
 </style>
 
 <script>
@@ -393,6 +564,76 @@ document.addEventListener('DOMContentLoaded', function() {
             if (url) {
                 window.location.href = url;
             }
+        });
+    });
+
+    // Add word panel functionality
+    const addBtn = document.getElementById('add-btn');
+    const panel = document.getElementById('add-word-panel');
+    const togglePanel = document.getElementById('toggle-panel');
+    const mainContent = document.getElementById('main-content');
+
+    function openPanel() {
+        panel.classList.add('open');
+        mainContent.classList.add('panel-open');
+        togglePanel.textContent = '>';
+        togglePanel.title = 'Close panel';
+        if (addBtn) {
+            addBtn.classList.add('disabled');
+        }
+        // Focus on prompt
+        setTimeout(() => document.getElementById('id_prompt').focus(), 50);
+    }
+
+    function closePanel() {
+        panel.classList.remove('open');
+        mainContent.classList.remove('panel-open');
+        togglePanel.textContent = '<';
+        togglePanel.title = 'Open panel';
+        if (addBtn) {
+            addBtn.classList.remove('disabled');
+        }
+    }
+
+    function togglePanelFunc() {
+        if (panel.classList.contains('open')) {
+            closePanel();
+        } else {
+            openPanel();
+        }
+    }
+
+    if (addBtn) addBtn.addEventListener('click', openPanel);
+    togglePanel.addEventListener('click', togglePanelFunc);
+
+    // Check if should open panel (after adding word)
+    if (window.location.search.includes('add=1')) {
+        openPanel();
+    }
+
+    // Handle form submission with AJAX
+    const form = document.getElementById('add-word-form');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(form);
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Reload to update the list
+                window.location.href = window.location.pathname + '?add=1';
+            } else {
+                // Handle error, perhaps show message
+                console.error('Error adding word');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
         });
     });
 });
