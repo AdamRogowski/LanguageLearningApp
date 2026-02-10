@@ -1,22 +1,67 @@
 {% extends 'base/authenticated/my_lessons/practice/practice_layout.html' %}
 
 {% block practice_content %}
-<p>
-    {% if mode == "reverse" %}
-        Translate: <strong>{{ question }}</strong>
-    {% else %}
-        What is the prompt for: <strong>{{ question }}</strong>
-    {% endif %}
-</p>
+<!-- Original Question Display -->
+<div class="question-display">
+    <h3>Question:</h3>
+    <p class="question-text">
+        {% if mode == "reverse" %}
+            Translate: <strong>{{ question }}</strong>
+        {% else %}
+            What is the prompt for: <strong>{{ question }}</strong>
+        {% endif %}
+    </p>
+</div>
 
-<form method="post">
-    {% csrf_token %}
-    <input type="text" name="answer" autocomplete="off" autofocus>
-    <button type="submit">Submit</button>
-</form>
+<div class="practice-question">
+    <form method="post" class="answer-form">
+        {% csrf_token %}
+        <input type="text" name="answer" autocomplete="off" autofocus placeholder="Type your answer here...">
+        <button type="submit" class="submit-btn">Submit</button>
+    </form>
+</div>
 
-<form method="get" action="{% url 'edit-word' user_word.id %}" style="display:inline;">
-    <input type="hidden" name="next" value="{% url 'practice' user_lesson_id=user_lesson_id mode=mode %}">
-    <button type="submit">Edit This Word</button>
-</form>
+<style>
+.practice-question {
+    max-width: 600px;
+}
+
+.answer-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.answer-form input[type="text"] {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 1em;
+    transition: border-color 0.2s;
+}
+
+.answer-form input[type="text"]:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.submit-btn {
+    padding: 12px 24px;
+    background: #007bff;
+    color: white;
+    border: 2px solid #007bff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.submit-btn:hover {
+    background: #0056b3;
+    border-color: #0056b3;
+}
+</style>
 {% endblock %}

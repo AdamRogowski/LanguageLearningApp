@@ -2,43 +2,257 @@
 
 {% block tab_content %}
 
-{% block practice_content %}{% endblock %}
+<div class="practice-container">
+    <!-- Audio elements -->
+    {% if user_word.word.has_prompt_audio %}
+        <audio id="prompt_audio" src="{{ user_word.word.prompt_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
+    {% endif %}
 
-<!-- Rollout for hint, usage, and notes -->
-<div>
-    <button type="button" onclick="toggleRollout('hint')">Show/Hide Hint</button>
-    <div id="hint" style="display:none; margin-bottom:1em;">
-        <em>{{ user_word.word.hint|default:"No hint available." }}</em>
+    <!-- Main practice content -->
+    <div class="practice-main">
+        {% block practice_content %}{% endblock %}
     </div>
-</div>
-<div>
-    <button type="button" onclick="toggleRollout('usage')">Show/Hide Usage</button>
-    <div id="usage" style="display:none; margin-bottom:1em;">
-        <em>{{ user_word.word.usage|default:"No usage example available." }}</em>
-        {% if user_word.word.has_usage_audio %}
-            <audio id="usage_audio" src="{{ user_word.word.usage_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
-            <button type="button" onclick="document.getElementById('usage_audio').play()">🔊 Listen to usage</button>
-        {% elif user_word.word.usage %}
-            <button type="button" disabled title="Audio not generated for this word" class="audio-disabled">🔇 No audio</button>
-        {% endif %}
-    </div>
-</div>
-<div>
-    <button type="button" onclick="toggleRollout('notes')">Show/Hide Notes</button>
-    <div id="notes" style="display:none;">
-        <em>{{ user_word.notes|default:"No notes available." }}</em>
-    </div>
-</div>
 
-{% block after_rollout %}
-<form method="post" action="{% url 'cancel-practice' user_lesson_id=user_lesson_id %}">
-    {% csrf_token %}
-    <button type="submit">Cancel Practice</button>
-</form>
-{% endblock %}
+    <!-- Side panel with controls -->
+    <div class="practice-sidebar">
+        <div class="sidebar-section">
+            <h4>Help & Tools</h4>
+
+            <!-- Listen to Prompt -->
+            {% if user_word.word.has_prompt_audio %}
+                <button type="button" class="sidebar-btn audio-btn" onclick="document.getElementById('prompt_audio').play()">🔊 Listen to Prompt</button>
+            {% else %}
+                <button type="button" class="sidebar-btn audio-btn audio-disabled" disabled title="Audio not available for this word">🔇 Listen to Prompt</button>
+            {% endif %}
+
+            <!-- Hint toggle -->
+            <button type="button" class="sidebar-btn" onclick="toggleRollout('hint')">
+                💡 Show/Hide Hint 
+            </button>
+            <div id="hint" class="rollout-content" style="display:none;">
+                <em>{{ user_word.word.hint|default:"No hint available." }}</em>
+            </div>
+
+            <!-- Usage toggle -->
+            <button type="button" class="sidebar-btn" onclick="toggleRollout('usage')">
+                📝 Show/Hide Usage
+            </button>
+            <div id="usage" class="rollout-content" style="display:none;">
+                <em>{{ user_word.word.usage|default:"No usage example available." }}</em>
+                {% if user_word.word.has_usage_audio %}
+                    <audio id="usage_audio" src="{{ user_word.word.usage_audio.url }}?v={{ user_word.word.updated|date:'U' }}"></audio>
+                    <button type="button" class="audio-btn" onclick="document.getElementById('usage_audio').play()">🔊 Listen</button>
+                {% elif user_word.word.usage %}
+                    <button type="button" class="audio-btn audio-disabled" disabled title="Audio not generated for this word">🔇 No audio</button>
+                {% endif %}
+            </div>
+
+            <!-- Notes toggle -->
+            <button type="button" class="sidebar-btn" onclick="toggleRollout('notes')">
+                📋 Show/Hide Notes
+            </button>
+            <div id="notes" class="rollout-content" style="display:none;">
+                <textarea id="notes-textarea" class="notes-editor" placeholder="Add your notes here...">{{ user_word.notes|default:"" }}</textarea>
+                <div class="notes-status" id="notes-status"></div>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <h4>Actions</h4>
+            <form method="get" action="{% url 'edit-word' user_word.id %}" style="margin-bottom: 10px;">
+                <input type="hidden" name="next" value="{% url 'practice' user_lesson_id=user_lesson_id mode=mode %}">
+                <button type="submit" class="sidebar-btn action-btn">✏️ Edit Word</button>
+            </form>
+
+            {% block after_rollout %}
+            <form method="post" action="{% url 'cancel-practice' user_lesson_id=user_lesson_id %}">
+                {% csrf_token %}
+                <button type="submit" class="sidebar-btn cancel-btn">❌ Cancel Practice</button>
+            </form>
+            {% endblock %}
+        </div>
+
+        <div class="sidebar-section">
+            <h4>Keyboard Shortcuts</h4>
+            <div class="shortcuts-list">
+                <div><kbd>F1</kbd> Listen to Prompt</div>
+                <div><kbd>F2</kbd> Toggle Hint</div>
+
+                <div><kbd>F3</kbd> Toggle Usage</div>
+                <div><kbd>F4</kbd> Toggle Notes</div>
+                <div><kbd>F5</kbd> Submit/Continue</div>
+                <div><kbd>F6</kbd> Accept as Correct</div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Styles -->
 <style>
+.practice-container {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.practice-main {
+    flex: 1;
+    min-width: 0; /* Allow flex item to shrink below content size */
+}
+
+.practice-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.sidebar-section {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.sidebar-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.sidebar-section h4 {
+    margin: 0 0 10px 0;
+    font-size: 0.9em;
+    color: #495057;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.sidebar-btn {
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background: white;
+    color: #495057;
+    cursor: pointer;
+    font-size: 0.85em;
+    text-align: left;
+    transition: all 0.2s;
+}
+
+.sidebar-btn:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.sidebar-btn.action-btn {
+    background: #e3f2fd;
+    border-color: #2196f3;
+    color: #1976d2;
+}
+
+.sidebar-btn.action-btn:hover {
+    background: #bbdefb;
+}
+
+.sidebar-btn.cancel-btn {
+    background: #ffebee;
+    border-color: #f44336;
+    color: #d32f2f;
+}
+
+.sidebar-btn.cancel-btn:hover {
+    background: #ffcdd2;
+}
+
+.rollout-content {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 5px;
+    font-size: 0.85em;
+    line-height: 1.4;
+}
+
+.notes-editor {
+    width: 100%;
+    min-height: 80px;
+    padding: 8px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.9em;
+    line-height: 1.4;
+    resize: vertical;
+    background: #fff;
+}
+
+.notes-editor:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.notes-status {
+    margin-top: 5px;
+    font-size: 0.75em;
+    color: #6c757d;
+    min-height: 1em;
+}
+
+.notes-status.saving {
+    color: #ffc107;
+}
+
+.notes-status.saved {
+    color: #28a745;
+}
+
+.notes-status.error {
+    color: #dc3545;
+}
+
+.audio-btn {
+    margin-top: 8px;
+    padding: 4px 8px;
+    font-size: 0.8em;
+    border: 1px solid #dee2e6;
+    border-radius: 3px;
+    background: #f8f9fa;
+    cursor: pointer;
+}
+
+.audio-btn:hover:not(:disabled) {
+    background: #e9ecef;
+}
+
+.audio-disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.shortcuts-list {
+    font-size: 0.8em;
+    color: #6c757d;
+}
+
+.shortcuts-list div {
+    margin-bottom: 3px;
+}
+
+.shortcuts-list kbd {
+    background: #f1f3f4;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 1px 4px;
+    font-size: 0.75em;
+    font-family: monospace;
+}
+
 .diff {
     background-color: #ffcccc;
     color: #a00;
@@ -63,6 +277,41 @@
 .audio-autoplay-content {
     font-weight: 500;
 }
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .practice-container {
+        flex-direction: column;
+    }
+
+    .practice-sidebar {
+        width: 100%;
+        order: -1; /* Show sidebar above main content on mobile */
+    }
+}
+
+.question-display {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.question-display h3 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    font-size: 1em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.question-text {
+    margin: 0;
+    font-size: 1.1em;
+    color: #212529;
+}
 </style>
 
 <!-- Scripts -->
@@ -72,31 +321,113 @@ function toggleRollout(id) {
     var el = document.getElementById(id);
     if (el.style.display === "none") {
         el.style.display = "block";
+        // Focus textarea when notes panel is opened
+        if (id === 'notes') {
+            var textarea = document.getElementById('notes-textarea');
+            if (textarea) {
+                // Small delay to ensure the element is visible before focusing
+                setTimeout(function() {
+                    textarea.focus();
+                    // Move cursor to the end of the text
+                    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                }, 10);
+            }
+        }
     } else {
         el.style.display = "none";
     }
 }
 
+// Function to show accept as correct info message
+function showAcceptInfoMessage() {
+    // Store timestamp in sessionStorage to persist across page loads
+    sessionStorage.setItem('showAcceptMessage', Date.now().toString());
+    
+    // Create and show message immediately
+    createAcceptMessage();
+}
+
+// Function to create and display the accept message
+function createAcceptMessage() {
+    // Remove any existing message first
+    var existingMessage = document.getElementById('accept-info-message');
+    if (existingMessage) {
+        existingMessage.parentNode.removeChild(existingMessage);
+    }
+    
+    // Create message element
+    var messageDiv = document.createElement('div');
+    messageDiv.id = 'accept-info-message';
+    messageDiv.innerHTML = '<div class="accept-info-content">ℹ️ Answer accepted as correct.</div>';
+    messageDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1000; background: #fff3cd; color: #856404; padding: 16px 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); min-width: 200px; max-width: 350px; font-size: 1rem; border: 1px solid #ffeaa7;';
+    
+    document.body.appendChild(messageDiv);
+    
+    // Auto-hide after 4 seconds
+    setTimeout(function() {
+        if (messageDiv.parentNode) {
+            messageDiv.parentNode.removeChild(messageDiv);
+        }
+        // Clear sessionStorage after hiding
+        sessionStorage.removeItem('showAcceptMessage');
+    }, 4000);
+}
+
 // Keyboard shortcuts
 document.addEventListener('keydown', function(event) {
-    if (event.key === 'F1') {
+    if  (event.key === 'F1') {
+        event.preventDefault();
+        var promptAudio = document.getElementById('prompt_audio') || document.getElementById('feedback_prompt_audio');
+        if (promptAudio) {
+            promptAudio.play();
+        }
+    } else if (event.key === 'F2') {
         event.preventDefault();
         toggleRollout('hint');
-    } else if (event.key === 'F2') {
+    } else if (event.key === 'F3') {
         event.preventDefault();
         toggleRollout('usage');
         var audio = document.getElementById('usage_audio');
         if (audio) {
             audio.play();
         }
-    } else if (event.key === 'F3') {
+    } else if (event.key === 'F4') {
         event.preventDefault();
         toggleRollout('notes');
+    } else if (event.key === 'F5') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        // Submit button in practice, Continue button in feedback
+        var submitBtn = document.querySelector('.submit-btn') || document.querySelector('.continue-btn');
+        if (submitBtn) {
+            submitBtn.click();
+        }
+        return false;
+    } else if (event.key === 'F6') {
+        event.preventDefault();
+        // Accept as correct button (only in feedback)
+        var acceptBtn = document.querySelector('.accept-btn');
+        if (acceptBtn) {
+            showAcceptInfoMessage();
+            acceptBtn.click();
+        }
     }
 });
 
 // Audio autoplay detection and handling
 document.addEventListener('DOMContentLoaded', function() {
+    // Check if we need to show accept message from previous page load
+    var acceptMessageTime = sessionStorage.getItem('showAcceptMessage');
+    if (acceptMessageTime) {
+        var timeDiff = Date.now() - parseInt(acceptMessageTime);
+        if (timeDiff < 4000) { // Within 4 seconds
+            createAcceptMessage();
+        } else {
+            // Clear expired message
+            sessionStorage.removeItem('showAcceptMessage');
+        }
+    }
+    
     // One-time autoplay capability check
     if (!sessionStorage.getItem('autoplayChecked')) {
         var testAudio = document.createElement('audio');
@@ -114,13 +445,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Handle prompt audio if present (feedback page)
-    var promptAudio = document.getElementById('prompt_audio');
-    if (promptAudio) {
+    // Handle prompt audio if present (only on feedback page)
+    var feedbackPromptAudio = document.getElementById('feedback_prompt_audio');
+    if (feedbackPromptAudio) {
         var messageDiv = document.getElementById('audio-autoplay-message');
         
         // Try autoplay
-        var playPromise = promptAudio.play();
+        var playPromise = feedbackPromptAudio.play();
         if (playPromise !== undefined) {
             playPromise.catch(function(error) {
                 // Show warning only once per session
@@ -133,6 +464,98 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+    }
+
+    // Accept as correct button handler
+    var acceptBtn = document.querySelector('.accept-btn');
+    if (acceptBtn) {
+        acceptBtn.addEventListener('click', function(e) {
+            // Show info message
+            showAcceptInfoMessage();
+        });
+    }
+
+    // Notes auto-save functionality
+    var notesTextarea = document.getElementById('notes-textarea');
+    var notesStatus = document.getElementById('notes-status');
+    var saveTimeout;
+
+    if (notesTextarea && notesStatus) {
+        // Function to save notes
+        function saveNotes() {
+            var notes = notesTextarea.value;
+            notesStatus.textContent = 'Saving...';
+            notesStatus.className = 'notes-status saving';
+
+            // Get CSRF token
+            var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (!csrfToken) return;
+
+            // Create form data
+            var formData = new FormData();
+            formData.append('notes', notes);
+            formData.append('csrfmiddlewaretoken', csrfToken.value);
+
+            // Send AJAX request
+            fetch('{% url "update-notes" user_word.id %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.success) {
+                    notesStatus.textContent = 'Saved';
+                    notesStatus.className = 'notes-status saved';
+                    setTimeout(function() {
+                        notesStatus.textContent = '';
+                    }, 2000);
+                } else {
+                    notesStatus.textContent = 'Error saving';
+                    notesStatus.className = 'notes-status error';
+                }
+            })
+            .catch(function(error) {
+                notesStatus.textContent = 'Error saving';
+                notesStatus.className = 'notes-status error';
+                console.error('Error saving notes:', error);
+            });
+        }
+
+        // Debounced save function
+        function debouncedSave() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveNotes, 1000); // Save after 1 second of inactivity
+        }
+
+        // Save on input (debounced)
+        notesTextarea.addEventListener('input', debouncedSave);
+
+        // Save immediately on blur (when user leaves the field)
+        notesTextarea.addEventListener('blur', function() {
+            clearTimeout(saveTimeout);
+            saveNotes();
+        });
+
+        // Save when navigating away from page
+        window.addEventListener('beforeunload', function() {
+            // Synchronous save - this will block navigation but ensure notes are saved
+            var notes = notesTextarea.value;
+            var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfToken) {
+                // Use synchronous XMLHttpRequest for beforeunload
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '{% url "update-notes" user_word.id %}', false); // false = synchronous
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                var params = 'notes=' + encodeURIComponent(notes) + '&csrfmiddlewaretoken=' + csrfToken.value;
+                xhr.send(params);
+            }
+        });
     }
 });
 </script>

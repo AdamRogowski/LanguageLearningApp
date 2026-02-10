@@ -2,7 +2,7 @@ from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.db.models import Q  # Import Q for complex queries
 from django.db.models import Avg  # Import Avg for aggregation
 from django.db.models.functions import Lower
@@ -1172,6 +1172,33 @@ def editWord(request, my_word_id):
 
 
 @login_required(login_url="login")
+def updateNotes(request, my_word_id):
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    try:
+        myWord = UserWord.objects.select_related(
+            "user_lesson", "user_lesson__user", "user_lesson__lesson",
+            "user_lesson__lesson__author", "user_lesson__lesson__access_type", "word"
+        ).filter(id=my_word_id).first()
+
+        if not myWord:
+            return JsonResponse({"error": "Word not found"}, status=404)
+
+        if request.user.id != myWord.user_lesson.user.id and not request.user.is_superuser:
+            return JsonResponse({"error": "Permission denied"}, status=403)
+
+        notes = request.POST.get("notes", "")
+        myWord.notes = notes
+        myWord.save()
+
+        return JsonResponse({"success": True, "notes": notes})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@login_required(login_url="login")
 @transaction.atomic
 def deleteWord(request, my_word_id):
 
@@ -1340,10 +1367,14 @@ def practice_feedback(request, user_lesson_id, mode="normal"):
         current_directory = UserDirectory.get_or_create_root_directory(request.user)
     breadcrumb_path = current_directory.get_path()
 
+    # Get the original question for display
+    question, _ = get_question_and_answer(user_word, mode)
+
     context = {
         "user_word": user_word,
         "user_lesson": user_word.user_lesson,
         "user_lesson_id": user_lesson_id,
+        "question": question,
         "answer": answer_data["answer"],
         "correct": answer_data["correct"],
         "diff_html": answer_data.get("diff_html", ""),

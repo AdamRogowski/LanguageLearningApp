@@ -61,6 +61,7 @@ urlpatterns = [
     path("create_word/<int:my_lesson_id>/", views.createWord, name="create-word"),
     path("edit_word/<int:my_word_id>/", views.editWord, name="edit-word"),
     path("delete_word/<int:my_word_id>/", views.deleteWord, name="delete-word"),
+    path("update_notes/<int:my_word_id>/", views.updateNotes, name="update-notes"),
     path(
         "start_practice/<int:user_lesson_id>/<str:mode>/",
         views.start_practice,

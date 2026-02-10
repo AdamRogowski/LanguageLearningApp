@@ -1,48 +1,178 @@
 {% extends 'base/authenticated/my_lessons/practice/practice_layout.html' %}
 
 {% block practice_content %}
-<!-- Audio element and warning message -->
+<!-- Original Question Display -->
+<div class="question-display">
+    <h3>Question:</h3>
+    <p class="question-text">
+        {% if mode == "reverse" %}
+            Translate: <strong>{{ question }}</strong>
+        {% else %}
+            What is the prompt for: <strong>{{ question }}</strong>
+        {% endif %}
+    </p>
+</div>
+
+<!-- Audio element for autoplay in feedback -->
 {% if user_word.word.has_prompt_audio %}
-    <audio id="prompt_audio" src="{{ user_word.word.prompt_audio.url }}?v={{ user_word.word.updated|date:'U' }}" autoplay>
+    <audio id="feedback_prompt_audio" src="{{ user_word.word.prompt_audio.url }}?v={{ user_word.word.updated|date:'U' }}" autoplay>
         Your browser does not support the audio element.
     </audio>
-    <button type="button" onclick="document.getElementById('prompt_audio').play()">🔊 Play Prompt Audio</button>
     
     <div id="audio-autoplay-message" class="audio-autoplay-message" style="display: none;">
         <div class="audio-autoplay-content">
-            Audio autoplay was blocked by your browser. Please check your browser settings to allow audio playback for this site, or click the "🔊 Play Prompt Audio" button below.
+            Audio autoplay was blocked by your browser. Please check your browser settings to allow audio playback for this site, or use the "🔊 Listen to Prompt" button in the Help & Tools section.
         </div>
     </div>
 {% endif %}
 
 <!-- Feedback display -->
-{% if correct %}
-    <div style="color: green;"><strong>Correct!</strong></div>
-    {% if lev_distance > 0 %}
-        <div>
-            Your answer: <code>{{ answer }}</code><br>
-            Correct answer: <code>{{ diff_html|safe }}</code><br>
+<div class="feedback-section">
+    {% if correct %}
+        <div class="feedback-correct">
+            <strong>✅ Correct!</strong>
+            {% if lev_distance > 0 %}
+                <div class="answer-comparison">
+                    <div class="answer-row">
+                        <span class="answer-label">Your answer:</span>
+                        <code class="answer-content">{{ answer }}</code>
+                    </div>
+                    <div class="answer-row">
+                        <span class="answer-label">Correct answer:</span>
+                        <code class="answer-content">{{ diff_html|safe }}</code>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    {% else %}
+        <div class="feedback-incorrect">
+            <strong>❌ Incorrect!</strong>
+            <div class="answer-comparison">
+                <div class="answer-row">
+                    <span class="answer-label">Your answer:</span>
+                    <code class="answer-content">{{ answer }}</code>
+                </div>
+                <div class="answer-row">
+                    <span class="answer-label">Correct answer:</span>
+                    <code class="answer-content">{{ diff_html|safe }}</code>
+                </div>
+            </div>
         </div>
     {% endif %}
-    <form method="post" style="display:inline;">
-        {% csrf_token %}
-        <button type="submit" autofocus>Continue</button>
-    </form>
-{% else %}
-    <div style="color: red;">
-        <strong>Incorrect!</strong><br>
-        Your answer: <code>{{ answer }}</code><br>
-        Difference: <code>{{ diff_html|safe }}</code><br>
+
+    <div class="action-buttons">
+        {% if not correct %}
+            <form method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" name="accept_as_correct" value="1" class="accept-btn">✓ Accept as correct</button>
+            </form>
+        {% endif %}
         <form method="post" style="display:inline;">
             {% csrf_token %}
-            <button type="submit" name="accept_as_correct" value="1">Accept my answer as correct</button>
-            <button type="submit" autofocus>Continue</button>
+            <button type="submit" class="continue-btn" autofocus>Continue</button>
         </form>
     </div>
-{% endif %}
+</div>
 
-<form method="get" action="{% url 'edit-word' user_word.id %}" style="display:inline;">
-    <input type="hidden" name="next" value="{% url 'practice-feedback' user_lesson_id=user_lesson_id mode=mode %}">
-    <button type="submit">Edit This Word</button>
-</form>
+<style>
+
+.feedback-section {
+    margin-bottom: 20px;
+}
+
+.feedback-correct {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.feedback-correct strong {
+    font-size: 1em;
+    font-weight: 600;
+}
+
+.feedback-incorrect {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.feedback-incorrect strong {
+    font-size: 1em;
+    font-weight: 600;
+}
+
+.answer-comparison {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.answer-row {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.answer-label {
+    flex: 0 0 150px; /* Fixed width for labels */
+    font-weight: 500;
+    color: inherit;
+    font-size: 1em;
+}
+
+.answer-content {
+    flex: 1;
+    font-family: monospace;
+    font-size: 1.5em;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 2px 4px;
+    border-radius: 3px;
+    word-break: break-all;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.action-buttons button {
+    padding: 8px 16px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s;
+}
+
+.continue-btn {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.continue-btn:hover {
+    background: #0056b3;
+    border-color: #0056b3;
+}
+
+.accept-btn {
+    background: #28a745;
+    color: white;
+    border-color: #28a745;
+}
+
+.accept-btn:hover {
+    background: #1e7e34;
+    border-color: #1e7e34;
+}
+</style>
 {% endblock %}

@@ -2,12 +2,6 @@
 
 {% block tab_content %}
 
-
-<a href="{% url 'reset-progress' my_lesson.id %}"><button>Reset Progress</button></a>
-<a href="{% url 'generate-lesson-audio-start' my_lesson.id %}">
-    <button>Regenerate Audio for All Words</button>
-</a>
-
 <form method="POST" action="">
     {% csrf_token %}
     {{ edit_user_lesson_form.as_p }}
