@@ -1262,6 +1262,19 @@ def deleteWord(request, my_word_id):
 @login_required(login_url="login")
 def start_practice(request, user_lesson_id, mode="normal"):
     user_lesson = get_object_or_404(UserLesson, id=user_lesson_id, user=request.user)
+
+    # Check if there are any words that still need practice
+    words_to_practice = UserWord.objects.filter(
+        user_lesson=user_lesson, current_progress__lt=user_lesson.target_progress
+    ).exists()
+
+    if not words_to_practice:
+        messages.info(
+            request,
+            "Target progress has been reached for all words! Consider resetting progress or increasing target progress in Edit lesson settings."
+        )
+        return redirect("my-lesson-details", my_lesson_id=user_lesson_id)
+
     initialize_practice_session(request, user_lesson, mode)
     return redirect("practice", user_lesson_id=user_lesson_id, mode=mode)
 
