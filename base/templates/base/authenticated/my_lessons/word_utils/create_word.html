@@ -1,0 +1,82 @@
+{% extends 'base/layouts/my_lessons_layout.html' %}
+
+{% block tab_content %}
+
+<h2>Create a New Word</h2>
+
+<form method="POST" action="">
+    {% csrf_token %}
+    {{ create_word_form.as_p }}
+    <div class="button-group">
+        <!-- Create Another is first in HTML (default for Enter key) but displayed last via CSS order -->
+        <input type="submit" name="create_another" value="Create Another" class="btn-create-another" />
+        <button type="button" class="btn-cancel">Cancel</button>
+        <button type="submit" name="save_and_close" value="1" class="btn-save-close">Save and Close</button>
+    </div>
+</form>
+
+<style>
+    .button-group {
+        margin-top: 15px;
+        display: flex;
+        gap: 10px;
+    }
+    
+    .button-group button,
+    .button-group input[type="submit"] {
+        padding: 8px 16px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        cursor: pointer;
+        font-size: 0.95em;
+    }
+    
+    /* Use flexbox order to visually reorder buttons */
+    .btn-cancel {
+        order: 1;
+        background: #f8f9fa;
+        color: #666;
+    }
+    
+    .btn-cancel:hover {
+        background: #e9ecef;
+    }
+    
+    .btn-save-close {
+        order: 2;
+        background: white;
+        color: #667eea;
+        border: 2px solid #667eea;
+    }
+    
+    .btn-save-close:hover {
+        background: #667eea;
+        color: white;
+    }
+    
+    .btn-create-another {
+        order: 3;
+        background: #667eea;
+        color: white;
+        border: 2px solid #667eea;
+        font-weight: 500;
+    }
+    
+    .btn-create-another:hover {
+        background: #5568d3;
+        border-color: #5568d3;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const cancelBtn = document.querySelector('.btn-cancel');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                window.location.href = '{% url "my-lesson-details" my_lesson.id %}';
+            });
+        }
+    });
+</script>
+
+{% endblock tab_content %}

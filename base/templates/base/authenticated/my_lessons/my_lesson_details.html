@@ -40,7 +40,7 @@
         <button type="submit" class="search-btn">🔍</button>
     </form>
     {% if can_edit %}
-    <span class="add-btn" title="Add new word (coming soon)">+</span>
+    <a href="{% url 'create-word' my_lesson.id %}" class="add-btn" title="Add new word">+</a>
     {% endif %}
 </div>
  

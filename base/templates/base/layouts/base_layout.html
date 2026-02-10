@@ -7,6 +7,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" media="screen" href="{% static 'styles/main.css' %}">
     <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+    
+    <style>
+        .popup-messages {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1002; /* Higher than header (1000) and user menu (1001) */
+            background: rgba(40, 167, 69, 0.95);
+            color: #fff;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            min-width: 200px;
+            max-width: 350px;
+            font-size: 1rem;
+            display: none;
+        }
+        .popup-message + .popup-message {
+            margin-top: 8px;
+        }
+    </style>
 </head>
 <body>
     {% if messages %}
@@ -21,32 +42,20 @@
                 var popup = document.getElementById('popup-messages');
                 if (popup) {
                     popup.style.display = 'block';
+                    console.log('Popup messages found and displayed:', popup.innerHTML);
                     setTimeout(function() {
                         popup.style.display = 'none';
+                        console.log('Popup messages hidden');
                     }, 3000);
+                } else {
+                    console.log('Popup messages element not found');
                 }
             });
         </script>
-        <style>
-            .popup-messages {
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 1000;
-                background: rgba(40, 167, 69, 0.95);
-                color: #fff;
-                padding: 16px 24px;
-                border-radius: 8px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                min-width: 200px;
-                max-width: 350px;
-                font-size: 1rem;
-                display: none;
-            }
-            .popup-message + .popup-message {
-                margin-top: 8px;
-            }
-        </style>
+    {% else %}
+        <script>
+            console.log('DEBUG: No messages found in template');
+        </script>
     {% endif %}
 
     {% block content %}
