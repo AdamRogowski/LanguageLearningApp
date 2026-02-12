@@ -6,6 +6,12 @@
     <title>Language Learning App</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" media="screen" href="{% static 'styles/main.css' %}">
+    <!-- Component styles -->
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/components/dropdown.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/components/buttons.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'styles/components/forms.css' %}">
+    <!-- Page-specific styles -->
+    {% block extra_css %}{% endblock %}
     <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
     
     <style>
@@ -66,5 +72,8 @@
         <p>&copy; 2026 Language Learning App</p>
     </footer>
 
+    <!-- Main JavaScript -->
+    <script src="{% static 'scripts/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
